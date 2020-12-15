@@ -3,7 +3,7 @@
 #ifndef scanbufferdraw_h
 #define scanbufferdraw_h
 
-#include <stdint.h>
+#include <cstdint>
 
 #ifndef BYTE
 #define BYTE unsigned char
@@ -42,7 +42,6 @@ typedef struct ScanBuffer {
     uint16_t itemCount;     // used to give each switch-point a unique ID. This is critical for the depth-sorting process
     int height;
     int width;
-    int32_t expectedScanBufferSize;
 
     ScanLine* scanLines;    // matrix of switch points.
     Material* materials;    // draw properties for each object
@@ -54,12 +53,12 @@ ScanBuffer *InitScanBuffer(int width, int height);
 void FreeScanBuffer(ScanBuffer *buf);
 
 // Fill a triagle with a solid colour
-void FillTrangle( ScanBuffer *buf,
-    int x0, int y0, 
-    int x1, int y1,
-    int x2, int y2,
-    int z,
-    int r, int g, int b);
+void FillTriangle(ScanBuffer *buf,
+                  int x0, int y0,
+                  int x1, int y1,
+                  int x2, int y2,
+                  int z,
+                  int r, int g, int b);
 
 // Fill an axis aligned rectangle
 void FillRect(ScanBuffer *buf,

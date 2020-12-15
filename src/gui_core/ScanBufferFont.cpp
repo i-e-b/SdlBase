@@ -1,11 +1,6 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "bugprone-reserved-identifier"
 #include "ScanBufferFont.h"
-
-// TODO:
-// Change the structures below. Every character has 8 rows. There aren't many unique rows
-// so have a big data blob to handle that.
-
-
-
 
 // Row-based components of the font
 #define fEND 0xffff // end of glyph
@@ -790,7 +785,7 @@ uint16_t* charMap[] { // ASCII, starting from 33 (0x21) '!'
 #define SAFETY_LIMIT 50
 
 void AddGlyph(ScanBuffer *buf, char c, int x, int y, int z, uint32_t color) {
-    if (buf == NULL) return;
+    if (buf == nullptr) return;
     if (c < 33 || c > 126) return;
     if (x < -7 || x > buf->width) return;
     if (y < -1 || y > buf->height + 8) return;

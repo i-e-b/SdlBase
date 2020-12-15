@@ -14,17 +14,19 @@ include_directories(./lib/SDL2-devel-2.0.9-VC/SDL2-2.0.9/include)
 link_directories(./lib/SDL2-devel-2.0.9-VC/SDL2-2.0.9/lib)
 
 add_executable(SdlBase
-        src/_EntryPoint_.cpp
+        # exe entry point
+        src/main.cpp
+        # core drawing and threading stuff
         src/gui_core/BinHeap.cpp
         src/gui_core/BinHeap.h
-        src/gui_core/ImmediateDraw.cpp
-        src/gui_core/ImmediateDraw.h
         src/gui_core/ScanBufferDraw.cpp
         src/gui_core/ScanBufferDraw.h
         src/gui_core/ScanBufferFont.cpp
         src/gui_core/ScanBufferFont.h
         src/gui_core/Sort.cpp
-        src/gui_core/Sort.h)
+        src/gui_core/Sort.h
+        # user app entry point
+        src/app/app_start.h src/app/app_start.cpp)
 
 configure_file(lib/SDL2-devel-2.0.9-VC/SDL2-2.0.9/lib/x86/SDL2.dll SDL2.dll COPYONLY)
 target_link_libraries(SdlBase "${PROJECT_SOURCE_DIR}/lib/SDL2-devel-2.0.9-VC/SDL2-2.0.9/lib/x86/SDL2.lib")

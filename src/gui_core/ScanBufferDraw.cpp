@@ -26,7 +26,6 @@ ScanBuffer * InitScanBuffer(int width, int height)
     if (buf == nullptr) return nullptr;
 
     auto sizeEstimate = width * 2;
-    buf->expectedScanBufferSize = sizeEstimate;
 
     // Idea: Have a single list and sort by overall position rather than x (would need a background reset at each scan start?)
     //       Could also do a 'region' like difference-from-last-scanline?
@@ -377,10 +376,10 @@ void OutlineEllipse(ScanBuffer * buf, int xc, int yc, int width, int height, int
     buf->itemCount++;
 }
 
-// Fill a triagle with a solid colour
+// Fill a triangle with a solid colour
 // Triangle must be clockwise winding (if dy is -ve, line is 'on', otherwise line is 'off')
-// counter-clockwise contours are detected and rearraged
-void FillTrangle(
+// counter-clockwise contours are detected and rearranged
+void FillTriangle(
     ScanBuffer *buf, 
     int x0, int y0,
     int x1, int y1,
@@ -440,7 +439,7 @@ void ClearScanBuffer(ScanBuffer * buf)
         buf->scanLines[i].dirty = true;
     }
 }
-
+/*
 // blend two colors, by a proportion [0..255]
 // 255 is 100% color1; 0 is 100% color2.
 inline uint32_t Blend(uint32_t prop1, uint32_t color1, uint32_t color2) {
@@ -458,7 +457,7 @@ inline uint32_t Blend(uint32_t prop1, uint32_t color1, uint32_t color2) {
 
     // everything needs shifting 8 bits, we've integrated it into the color merge
     return ((r & 0xff00u) << 8u) + ((g & 0xff00u)) + ((b >> 8u) & 0xffu);
-}
+}*/
 
 // reduce display heap to the minimum by merging with remove heap
 inline void CleanUpHeaps(PriorityQueue p_heap, PriorityQueue r_heap) {
@@ -521,8 +520,7 @@ void RenderScanLine(
 
     bool on = false;
     uint32_t p = 0; // current pixel
-    uint32_t c=0,color = 0; // color of current object
-    //uint32_t color_under = 0; // antialiasing color
+    uint32_t color = 0; // color of current object
     SwitchPoint current; // top-most object's most recent "on" switch
     for (int i = 0; i < count; i++)
     {

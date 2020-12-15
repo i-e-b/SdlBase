@@ -13,3 +13,7 @@ This should be pretty plain C code.
 * Port the graphics format and compression bits in ImageTools from C#
 * Port StreamDb over as a file format
 
+### Using the base for projects
+
+Your application-specific code should go in `src/app`.
+Start with the event handlers and frame routines in src/app/app_start.c
