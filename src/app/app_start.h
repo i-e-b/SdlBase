@@ -33,8 +33,14 @@ typedef struct ApplicationGlobalState {
  * Main application implementation points *
  ******************************************/
 
+// Called once at app start
+void StartUp();
+// Called for every frame. The scan buffer is not cleared before calling
 void DrawToScanBuffer(ScanBuffer *scanBuf, int frame, uint32_t frameTime);
+// Called when an SDL event is consumed
 void HandleEvent(SDL_Event *event, volatile ApplicationGlobalState *state);
 
+// Called once at app stop
+void Shutdown();
 
 #endif //SDLBASE_APP_START_H

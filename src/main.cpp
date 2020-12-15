@@ -51,7 +51,7 @@ int RenderWorker(void*)
 void HandleEvents() {
     SDL_PumpEvents();
     SDL_Event next_event;
-    while (SDL_PollEvent(&next_event)) { // TODO: should be kicking events out to non-core
+    while (SDL_PollEvent(&next_event)) {
         HandleEvent(&next_event, &gState);
     }
 }
@@ -84,6 +84,9 @@ int main(int argc, char * argv[])
         return 1;
     }
 
+    // Let the app startup
+    StartUp();
+
     gDataLock = SDL_CreateMutex(); // Initialize lock, one reader at a time
     screenSurface = SDL_GetWindowSurface(window); // Get window surface
 
@@ -95,8 +98,6 @@ int main(int argc, char * argv[])
 
     cout << "\r\nScreen format: " << SDL_GetPixelFormatName(screenSurface->format->format);
     cout << "\r\nBytesPerPixel: " << (pixBytes) << ", exact? " << (((screenSurface->pitch % pixBytes) == 0) ? "yes" : "no");
-
-    int animationFrames = 1500;
 
     BufferA = InitScanBuffer(w, h);
     BufferB = InitScanBuffer(w, h);
@@ -162,9 +163,12 @@ int main(int argc, char * argv[])
     frameWait = 100;
 
     long endTicks = SDL_GetTicks();
-    float avgFPS = static_cast<float>(animationFrames) / (static_cast<float>(endTicks - startTicks) / 1000.f);
-    float idleFraction = static_cast<float>(idleTime) / (15.f*static_cast<float>(animationFrames));
+    float avgFPS = static_cast<float>(frame) / (static_cast<float>(endTicks - startTicks) / 1000.f);
+    float idleFraction = static_cast<float>(idleTime) / (15.f*static_cast<float>(frame));
     cout << "\r\nFPS ave = " << avgFPS << "\r\nIdle % = " << (100 * idleFraction);
+
+    // Let the app deallocate etc
+    Shutdown();
 
 #ifdef MULTI_THREAD
     while (!drawDone) { SDL_Delay(100); }// wait for the renderer to finish
