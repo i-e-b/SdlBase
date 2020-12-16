@@ -11,6 +11,7 @@ using namespace std;
 
 // Two-thread rendering stuff:
 SDL_mutex* gDataLock = nullptr; // Data access semaphore, for the read buffer
+SDL_Window* window; //The window we'll be rendering to
 ScanBuffer *BufferA, *BufferB; // pair of scanline buffers. One is written while the other is read
 volatile bool quit = false; // Quit flag
 volatile bool drawDone = false; // Quit complete flag
@@ -39,6 +40,7 @@ int RenderWorker(void*)
         SDL_UnlockMutex(gDataLock);
 
         RenderBuffer(scanBuf, base);
+        SDL_UpdateWindowSurface(window);                        // update the surface -- need to do this every frame.
 
         SDL_LockMutex(gDataLock);
         frameWait = 0;
@@ -59,12 +61,9 @@ void HandleEvents() {
 // We undefine the `main` macro in SDL_main.h, because it confuses the linker.
 #undef main
 
-int main()//int argc, char * argv[])
+int main()
 {
-    //The window we'll be rendering to
-    SDL_Window* window;
-
-    //The surface contained by the window
+    // The surface contained by the window
     SDL_Surface* screenSurface;
 
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
@@ -116,9 +115,6 @@ int main()//int argc, char * argv[])
     gState.running = true;
     while (gState.running) {
         uint32_t fst = SDL_GetTicks();
-
-        SDL_UpdateWindowSurface(window);                        // update the surface -- need to do this every frame.
-
         // Wait for frame render to finish, then swap buffers and do next
 
 #ifdef MULTI_THREAD
@@ -137,8 +133,11 @@ int main()//int argc, char * argv[])
         DrawToScanBuffer(scanBuf, frame++, fTime);
 
 #ifndef MULTI_THREAD
+        // if not threaded, render immediately
         RenderBuffer(scanBuf, base);
+        SDL_UpdateWindowSurface(window);
 #endif
+
 
         // Event loop and frame delay
 #ifdef FRAME_LIMIT
