@@ -1,9 +1,10 @@
 #include "HashMap.h"
-#include "Vector.h"
 #include "String.h"
 #include "MemoryManager.h"
 #include "RawData.h"
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 // Fixed sizes -- these are structural to the code and must not change
 const unsigned int MAX_BUCKET_SIZE = 1<<30; // safety limit for scaling the buckets
 const unsigned int SAFE_HASH = 0x80000000; // just in case you get a zero result
@@ -22,7 +23,7 @@ typedef struct HashMap_Entry {
 
 typedef struct HashMap {
     // Storage and types
-    Vector* buckets; // this is a Vector<HashMap_Entry + keydata + valuedata>
+    Vector* buckets; // this is a Vector<HashMap_Entry + keyData + valueData>
     Arena* memory; // location for allocating new memory.
 
     int KeyByteSize; // byte length of the key
@@ -46,7 +47,7 @@ typedef struct HashMap {
 } HashMap;
 
 bool HashMapIsValid(HashMap *h) {
-    if (h == NULL) return false;
+    if (h == nullptr) return false;
     if (!VectorIsValid(h->buckets)) return false;
     return h->IsValid;
 }
@@ -67,7 +68,7 @@ inline void* ValuePtr(HashMap* h, HashMap_Entry* e) {
 }
 
 inline bool SwapOut(Vector* vec, uint32_t idx, HashMap_Entry* newEntry) {
-    if (vec == NULL) return false;
+    if (vec == nullptr) return false;
 
     auto size = VectorElementSize(vec);
 
@@ -77,11 +78,11 @@ inline bool SwapOut(Vector* vec, uint32_t idx, HashMap_Entry* newEntry) {
     auto temp = VectorGet(vec, -1);
 
     if (!VectorSet(vec, idx, newEntry, temp)) {
-        VectorPop(vec, NULL);
+        VectorPop(vec, nullptr);
         return false;
     }
     writeValue(newEntry, 0, temp, size);
-    VectorPop(vec, NULL);
+    VectorPop(vec, nullptr);
     return true;
 }
 
@@ -95,11 +96,11 @@ bool PutInternal(HashMap * h, HashMap_Entry* entry, bool canReplace, bool checkD
         if (!VectorIsValid(h->buckets))
             return false;
         auto current = (HashMap_Entry*)VectorGet(h->buckets, indexCurrent);
-        if (current == NULL) return false; // internal failure
+        if (current == nullptr) return false; // internal failure
 
         if (current->hash == 0) {
             h->countUsed++;
-            VectorSet(h->buckets, indexCurrent, entry, NULL);
+            VectorSet(h->buckets, indexCurrent, entry, nullptr);
             return true;
         }
 
@@ -110,7 +111,7 @@ bool PutInternal(HashMap * h, HashMap_Entry* entry, bool canReplace, bool checkD
 
             if (!VectorIsValid(h->buckets)) return false;
 
-            VectorSet(h->buckets, indexCurrent, entry, NULL);
+            VectorSet(h->buckets, indexCurrent, entry, nullptr);
             return true;
         }
 
@@ -140,7 +141,7 @@ bool Resize(HashMap * h, uint32_t newSize, bool autoSize) {
     h->countMod = newSize - 1;
 
     auto newBuckets = VectorAllocateArena(h->memory, sizeof(HashMap_Entry) + h->KeyByteSize + h->ValueByteSize);
-    if (!VectorIsValid(newBuckets) || !VectorPrealloc(newBuckets, newSize)) return false;
+    if (!VectorIsValid(newBuckets) || !VectorPreallocate(newBuckets, newSize)) return false;
 
     h->buckets = newBuckets;
 
@@ -158,7 +159,7 @@ bool Resize(HashMap * h, uint32_t newSize, bool autoSize) {
         for (uint32_t i = 0; i < oldCount; i++) {
             // Read and validate old bucket entry
             auto oldEntry = (HashMap_Entry*)VectorGet(oldBuckets, i);
-            if (oldEntry == NULL || oldEntry->hash == 0) continue;
+            if (oldEntry == nullptr || oldEntry->hash == 0) continue;
 
             // Copy the old entry into the new bucket vector
             PutInternal(h, oldEntry, false, false);
@@ -171,7 +172,7 @@ bool Resize(HashMap * h, uint32_t newSize, bool autoSize) {
 
 
 void HashMapPurge(HashMap *h) {
-    auto size = NextPow2((h->countUsed) / LOAD_FACTOR);
+    auto size = NextPow2((uint32_t)((float)(h->countUsed) / LOAD_FACTOR));
     Resize(h, size, true);
 }
 
@@ -193,36 +194,42 @@ bool ResizeNext(HashMap * h) {
 }
 
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "UnusedLocalVariable"
 HashMap* HashMapAllocateArena(Arena* a, unsigned int size, int keyByteSize, int valueByteSize, bool(*keyComparerFunc)(void* key_A, void* key_B), unsigned int(*getHashFunc)(void* key)) {
-    if (a == NULL) return NULL;
+#pragma clang diagnostic pop
+    if (a == nullptr) return nullptr;
     auto result = (HashMap*)ArenaAllocateAndClear(a, sizeof(HashMap));
-    if (result == NULL) return NULL;
+    if (result == nullptr) return nullptr;
     result->memory = a;
     result->KeyByteSize = keyByteSize;
     result->ValueByteSize = valueByteSize;
     result->KeyComparer = keyComparerFunc;
     result->GetHash = getHashFunc;
-    result->buckets = NULL; // created in `Resize`
+    result->buckets = nullptr; // created in `Resize`
     result->IsValid = Resize(result, (uint32_t)NextPow2(size), false);
     return result;
 }
 
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "UnusedLocalVariable"
 HashMap* HashMapAllocate(unsigned int size, int keyByteSize, int valueByteSize, bool(*keyComparerFunc)(void* key_A, void* key_B), unsigned int(*getHashFunc)(void* key)) {
     return HashMapAllocateArena(MMCurrent(), size, keyByteSize, valueByteSize, keyComparerFunc, getHashFunc);
 }
+#pragma clang diagnostic pop
 
 void HashMapDeallocate(HashMap * h) {
-    if (h == NULL) return;
+    if (h == nullptr) return;
     h->IsValid = false;
     h->count = 0;
-    if (h->buckets != NULL) VectorDeallocate(h->buckets);
+    if (h->buckets != nullptr) VectorDeallocate(h->buckets);
     ArenaDereference(h->memory, h);
 }
 
 bool Find(HashMap* h, void* key, uint32_t* index, HashMap_Entry** found) {
     *index = 0;
-    if (h == NULL) return false;
+    if (h == nullptr) return false;
     if (h->countUsed <= 0) return false;
     //if (!VectorIsValid(h->buckets)) return false;
 
@@ -232,14 +239,14 @@ bool Find(HashMap* h, void* key, uint32_t* index, HashMap_Entry** found) {
 
     for (uint32_t i = 0; i < h->count; i++) {
         *index = (indexInit + i) & h->countMod;
-        auto res = (HashMap_Entry*)VectorGet(h->buckets, *index); // TODO: optimise with a static mem array when we can
-        if (res == NULL) return false; // internal failure
+        auto res = (HashMap_Entry*)VectorGet(h->buckets, *index);
+        if (res == nullptr) return false; // internal failure
 
         auto keyData = KeyPtr(res);
 
         // found?
         if ((hash == res->hash) && h->KeyComparer(key, keyData)) {
-            if (found != NULL) *found = res;
+            if (found != nullptr) *found = res;
             return true;
         }
 
@@ -253,24 +260,24 @@ bool Find(HashMap* h, void* key, uint32_t* index, HashMap_Entry** found) {
 }
 
 bool HashMapGet(HashMap* h, void* key, void** outValue) {
-    if (h == NULL) return false;
+    if (h == nullptr) return false;
     // Find the entry index
     uint32_t index = 0;
-    HashMap_Entry* res = NULL;
+    HashMap_Entry* res = nullptr;
     if (!Find(h, key, &index, &res)) return false;
 
     // look up the entry
-    if (res == NULL) {
+    if (res == nullptr) {
         return false;
     }
 
     // look up the value
-    if (outValue != NULL) *outValue = ValuePtr(h, res);
+    if (outValue != nullptr) *outValue = ValuePtr(h, res);
     return true;
 }
 
 inline HashMap_Entry* HashMapAllocEntry(HashMap* h) {
-    if (h->memory == NULL) return NULL;
+    if (h->memory == nullptr) return nullptr;
     return (HashMap_Entry*)ArenaAllocateAndClear(h->memory, sizeof(HashMap_Entry) + h->KeyByteSize + h->ValueByteSize);
 }
 
@@ -279,7 +286,7 @@ inline void HashMapFreeEntry(HashMap* h, HashMap_Entry* e) {
 }
 
 bool HashMapPut(HashMap* h, void* key, void* value, bool canReplace) {
-    if (h == NULL) return false;
+    if (h == nullptr) return false;
     // Check to see if we need to grow
     if (h->countUsed >= h->growAt) {
         if (!ResizeNext(h)) return false;
@@ -290,7 +297,7 @@ bool HashMapPut(HashMap* h, void* key, void* value, bool canReplace) {
     
     // Write the entry into the hashmap
     auto entry = HashMapAllocEntry(h);
-    if (entry == NULL) return false;
+    if (entry == nullptr) return false;
 
     entry->hash = safeHash;
     writeValue(KeyPtr(entry), 0, key, h->KeyByteSize);
@@ -324,19 +331,19 @@ Vector *HashMapAllEntries(HashMap* h) {
 
 bool HashMapRemove(HashMap* h, void* key) {
     uint32_t index;
-    if (!Find(h, key, &index, NULL)) return false;
+    if (!Find(h, key, &index, nullptr)) return false;
 
     for (uint32_t i = 0; i < h->count; i++) {
         auto curIndex = (index + i) & h->countMod;
         auto nextIndex = (index + i + 1) & h->countMod;
 
         auto res = (HashMap_Entry*)VectorGet(h->buckets, nextIndex);
-        if (res == NULL) return false; // internal failure
+        if (res == nullptr) return false; // internal failure
 
         if ((res->hash == 0) || (DistanceToInitIndex(h, nextIndex, res) == 0))
         {
             auto empty = HashMap_Entry();
-            VectorSet(h->buckets, curIndex, &empty, NULL);
+            VectorSet(h->buckets, curIndex, &empty, nullptr);
 
             if (--(h->countUsed) == h->shrinkAt) Resize(h, h->shrinkAt, true);
 
@@ -357,7 +364,7 @@ unsigned int HashMapCount(HashMap * h) {
     return h->countUsed;
 }
 
-// Default comparers and hashers:
+// Default comparer and hash functions:
 
 bool HashMapStringKeyCompare(void* key_A, void* key_B) {
     auto A = *((StringPtr*)key_A);
@@ -377,3 +384,5 @@ uint32_t HashMapIntKeyHash(void* key) {
     auto A = *((uint32_t*)key);
     return A | 0xA0000000;
 }
+
+#pragma clang diagnostic pop

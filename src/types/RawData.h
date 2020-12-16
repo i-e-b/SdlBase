@@ -31,43 +31,43 @@ inline void readIntPrefixValue(void *dest, void* vecEntry, int length) {
         *(dst++) = *(src++);
     }
 }
-inline void * byteOffset(void *ptr, int byteOffset) {
+inline void * byteOffset(void *ptr, size_t byteOffset) {
     auto x = (size_t)ptr;
     x += byteOffset;
     return (void*)x;
 }
-inline unsigned short readUshort(void* ptr, int byteOffset) {
+inline unsigned short readUshort(void* ptr, size_t byteOffset) {
     char* x = (char*)ptr;
     x += byteOffset;
     return *((unsigned short*)x);
 }
-inline void writeUshort(void *ptr, int byteOffset, unsigned short data) {
+inline void writeUshort(void *ptr, size_t byteOffset, unsigned short data) {
     char* x = (char*)ptr;
     x += byteOffset;
     *(unsigned short*)x = data;
 }
-inline void* readPtr(void* ptr, int byteOffset) {
+inline void* readPtr(void* ptr, size_t byteOffset) {
     char* x = (char*)ptr;
     x += byteOffset;
     size_t v = *((size_t*)x);
     return (void*)v;
 }
-inline unsigned int readUint(void* ptr, int byteOffset) {
+inline unsigned int readUint(void* ptr, size_t byteOffset) {
     char* x = (char*)ptr;
     x += byteOffset;
     return *((unsigned int*)x);
 }
-inline void writeUint(void *ptr, int byteOffset, unsigned int data) {
+inline void writeUint(void *ptr, size_t byteOffset, unsigned int data) {
     char* x = (char*)ptr;
     x += byteOffset;
     *(unsigned int*)x = data;
 }
-inline void writePtr(void *ptr, int byteOffset, void* data) {
+inline void writePtr(void *ptr, size_t byteOffset, void* data) {
     char* x = (char*)ptr;
     x += byteOffset;
     *(size_t*)x = (size_t)data;
 }
-inline void writeValue(void *ptr, int byteOffset, void* data, int length) {
+inline void writeValue(void *ptr, size_t byteOffset, void* data, int length) {
     char* dst = (char*)ptr;
     dst += byteOffset;
     char* src = (char*)data;

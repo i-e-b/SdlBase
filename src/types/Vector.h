@@ -10,9 +10,9 @@ typedef struct Vector Vector;
 typedef Vector* VectorPtr;
 
 // Create a new dynamic vector with the given element size (must be fixed per vector)
-Vector *VectorAllocate(int elementSize);
+Vector *VectorAllocate(size_t elementSize);
 // Create a new dynamic vector with the given element size (must be fixed per vector) in a specific memory arena
-Vector *VectorAllocateArena(Arena* a, int elementSize);
+Vector *VectorAllocateArena(Arena* a, size_t elementSize);
 // Clone a vector into a new arena
 Vector* VectorClone(Vector* source, Arena* a);
 // Check the vector is correctly allocated
@@ -22,7 +22,7 @@ void VectorClear(Vector *v);
 // Deallocate vector (does not deallocate anything held in the elements)
 void VectorDeallocate(Vector *v);
 // Return number of elements in vector. Allocated capacity may be substantially different
-int VectorLength(Vector *v);
+unsigned int VectorLength(Vector *v);
 // Push a new value to the end of the vector
 bool VectorPush(Vector *v, void* value);
 // Get a pointer to an element in the vector. This is an in-place pointer -- no copy is made
@@ -35,11 +35,11 @@ bool VectorDequeue(Vector *v, void* outValue);
 bool VectorPop(Vector *v, void *target);
 // Read the end element from the vector without removing it. A copy of the element is written into the parameter
 bool VectorPeek(Vector *v, void* target);
-// Write a value at a given position. This must be an existing allocated position (with either push or prealloc).
+// Write a value at a given position. This must be an existing allocated position (with either push or preallocate).
 // If not 'prevValue' is not null, the old value is copied there
 bool VectorSet(Vector *v, int index, void* element, void* prevValue);
 // Ensure the vector has at least this many elements allocated. Any extras written will be zeroed out.
-bool VectorPrealloc(Vector *v, unsigned int length);
+bool VectorPreallocate(Vector *v, unsigned int length);
 // Swaps the values at two positions in the vector
 bool VectorSwap(Vector *v, unsigned int index1, unsigned int index2);
 
@@ -53,7 +53,7 @@ void VectorSort(Vector *v, int(*compareFunc)(void* A, void* B));
 // Read a range of the vector into a contiguous array
 // this is for optimising multiple local accesses in algorithms.
 // `lowIndex` and `highIndex` will be updated to the actual range returned
-void* VectorCacheRange(Vector* v, int* lowIndex, int* highIndex);
+void* VectorCacheRange(Vector* v, uint32_t* lowIndex, uint32_t* highIndex);
 // Free cache memory
 void VectorFreeCache(Vector* v, void* cache);
 
@@ -78,7 +78,7 @@ void* IterativeMergeSort(void* arr1, void* arr2, int n, int elemSize, int(*compa
     inline void nameSpace##Deallocate(Vector *v){ VectorDeallocate(v); }\
     inline bool nameSpace##Reverse(Vector *v){ return VectorReverse(v); }\
     inline int nameSpace##Length(Vector *v){ return VectorLength(v); }\
-    inline bool nameSpace##Prealloc(Vector *v, unsigned int length){ return VectorPrealloc(v, length); }\
+    inline bool nameSpace##Prealloc(Vector *v, unsigned int length){ return VectorPreallocate(v, length); }\
     inline Vector* nameSpace##Clone(Vector* source, Arena* a){ return VectorClone(source, a); }\
     inline bool nameSpace##Swap(Vector *v, unsigned int index1, unsigned int index2){ return VectorSwap(v, index1, index2); }\
     inline void nameSpace##FreeCache(Vector *v, void *c) { VectorFreeCache(v, c); }\
@@ -96,7 +96,7 @@ void* IterativeMergeSort(void* arr1, void* arr2, int n, int elemSize, int(*compa
     inline bool nameSpace##Set_##typeName(Vector *v, int index, typeName element, typeName* prevValue){ return VectorSet(v, index, &element, (void*)prevValue); } \
     inline bool nameSpace##Dequeue_##typeName(Vector *v, typeName* outValue) { return VectorDequeue(v, (void*)outValue);}\
     inline void nameSpace##Sort_##typeName(Vector *v, int(*compareFunc)(typeName* A, typeName* B)) {VectorSort(v, (int(*)(void* A, void* B))compareFunc);}\
-    inline typeName* nameSpace##CacheRange_##typeName(Vector* v, int* lowIndex, int* highIndex) {return (typeName*)VectorCacheRange(v, lowIndex, highIndex);}\
+    inline typeName* nameSpace##CacheRange_##typeName(Vector* v, uint32_t* lowIndex, uint32_t* highIndex) {return (typeName*)VectorCacheRange(v, lowIndex, highIndex);}\
 
 
 

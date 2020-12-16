@@ -1,9 +1,11 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 #pragma once
 
-#ifndef mathbits_h
-#define mathbits_h
+#ifndef MathBits_h
+#define MathBits_h
 
-#include <stdint.h>
+#include <cstdint>
 
 #define RAND_MAX 0x7FFFFFFF
 
@@ -50,3 +52,5 @@ float float_random(uint32_t seedStep) {
 }
 
 #endif
+
+#pragma clang diagnostic pop

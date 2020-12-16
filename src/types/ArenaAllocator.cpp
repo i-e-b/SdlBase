@@ -1,11 +1,10 @@
 #include "ArenaAllocator.h"
-#include "Vector.h"
-
 #include "RawData.h"
 
-#include <stdlib.h>
-#include <stdint.h>
+#include <cstdlib>
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 #ifdef ARENA_DEBUG
 #include <iostream>
 #endif
@@ -45,15 +44,14 @@ typedef struct Arena {
 // arena. Fragmentation may make the usable size smaller. Size should be a multiple of ARENA_ZONE_SIZE
 Arena* NewArena(size_t size) {
     int expectedZoneCount = (int)(size / ARENA_ZONE_SIZE) + 1;
-    int overhead = sizeof(uint16_t) * expectedZoneCount * 2;
 
     auto realMemory = calloc(1, size + ARENA_ZONE_SIZE);
-    if (realMemory == NULL) return NULL;
+    if (realMemory == nullptr) return nullptr;
 
     auto result = (Arena*)calloc(1, sizeof(Arena));
-    if (result == NULL) {
+    if (result == nullptr) {
         free(realMemory);
-        return NULL;
+        return nullptr;
     }
 
     result->_start = realMemory;
@@ -79,10 +77,10 @@ Arena* NewArena(size_t size) {
     result->_start = byteOffset(result->_start, sizeOfTables * 2);
 
     // zero-out the tables
-    auto zptr = result->_headsPtr;
-    while (zptr < result->_start) {
-        writeUshort(zptr, 0, 0);
-        zptr += 1;
+    auto zeroPtr = result->_headsPtr;
+    while (zeroPtr < result->_start) {
+        writeUshort(zeroPtr, 0, 0);
+        zeroPtr += 1;
     }
 
     return result;
@@ -90,17 +88,17 @@ Arena* NewArena(size_t size) {
 
 // Call to drop an arena, deallocating all memory it contains
 void DropArena(Arena** a) {
-    if (a == NULL) return;
+    if (a == nullptr) return;
 
     auto ptr = *a;
-	*a = NULL; // kill the arena reference
-    if (ptr == NULL) return;
+	*a = nullptr; // kill the arena reference
+    if (ptr == nullptr) return;
 
-    if (ptr->_headsPtr != NULL) { // delete contained memory
+    if (ptr->_headsPtr != nullptr) { // delete contained memory
         free(ptr->_headsPtr);
-        ptr->_headsPtr = NULL;
-        ptr->_start = NULL;
-        ptr->_limit = NULL;
+        ptr->_headsPtr = nullptr;
+        ptr->_start = nullptr;
+        ptr->_limit = nullptr;
     }
 
     free(ptr); // Free the arena reference itself
@@ -114,29 +112,29 @@ void TraceArena(Arena* a, bool traceOn) {
 
 // Copy arena data out to system-level memory. Use this for very long-lived data
 void* MakePermanent(void* data, size_t length) {
-    if (length < 1) return NULL;
-    if (data == NULL) return NULL;
+    if (length < 1) return nullptr;
+    if (data == nullptr) return nullptr;
 
     void* perm = malloc(length);
-    if (perm == NULL) return NULL;
+    if (perm == nullptr) return nullptr;
 
     copyAnonArray(perm, 0, data, 0, length);
 
-    return NULL;
+    return nullptr;
 }
 
 // Copy data from one arena to another. Use this for return values
 void* CopyToArena(void* srcData, size_t length, Arena* target) {
-    if (srcData == NULL) return NULL;
-    if (length < 1) return NULL;
-    if (target == NULL) return NULL;
+    if (srcData == nullptr) return nullptr;
+    if (length < 1) return nullptr;
+    if (target == nullptr) return nullptr;
 
     auto dstData = ArenaAllocate(target, length);
-    if (dstData == NULL) return NULL;
+    if (dstData == nullptr) return nullptr;
 
     copyAnonArray(dstData, 0, srcData, 0, length);
 
-    return NULL;
+    return nullptr;
 }
 
 
@@ -155,11 +153,11 @@ void SetRefCount(Arena* a, int zoneIndex, uint16_t val) {
 
 // Allocate memory of the given size
 void* ArenaAllocate(Arena* a, size_t byteCount) {
-    if (byteCount > ARENA_ZONE_SIZE) return NULL; // Invalid allocation -- beyond max size.
-    if (a == NULL) return NULL;
+    if (byteCount > ARENA_ZONE_SIZE) return nullptr; // Invalid allocation -- beyond max size.
+    if (a == nullptr) return nullptr;
 
 #ifdef ARENA_DEBUG
-    if (a->_marked == true) {
+    if (a->_marked) {
         std::cout << "A@" << a->_headsPtr << ";S" << byteCount << "\n";
     }
 #endif
@@ -177,7 +175,7 @@ void* ArenaAllocate(Arena* a, size_t byteCount) {
         // found a slot where it will fit
         a->_currentZone = i;
         size_t result = GetHead(a, i); // new pointer
-        SetHead(a, i, result + byteCount); // advance pointer to end of allocated data
+        SetHead(a, i, (uint16_t) (result + byteCount)); // advance pointer to end of allocated data
 
         auto oldRefs = GetRefCount(a, i);
         SetRefCount(a, i, oldRefs + 1); // increase arena ref count
@@ -186,12 +184,12 @@ void* ArenaAllocate(Arena* a, size_t byteCount) {
     }
 
     // found nothing -- out of memory!
-    return NULL;
+    return nullptr;
 }
 
 void* ArenaAllocateAndClear(Arena* a, size_t byteCount) {
     char* res = (char*)ArenaAllocate(a, byteCount);
-    if (res == NULL) return NULL;
+    if (res == nullptr) return nullptr;
     for (size_t i = 0; i < byteCount; i++) {
         res[i] = 0;
     }
@@ -209,7 +207,7 @@ int ZoneForPtr(Arena* a, void* ptr) {
 }
 
 bool ArenaContainsPointer(Arena* a, void* ptr) {
-    if (a == NULL) return false;
+    if (a == nullptr) return false;
     if (ptr < a->_start || ptr > a->_limit) return false;
 
     return true;
@@ -217,11 +215,11 @@ bool ArenaContainsPointer(Arena* a, void* ptr) {
 
 // Remove a reference to memory. When no references are left, the memory may be deallocated
 bool ArenaDereference(Arena* a, void* ptr) {
-    if (a == NULL) return false;
-    if (ptr == NULL) return false;
+    if (a == nullptr) return false;
+    if (ptr == nullptr) return false;
 
 #ifdef ARENA_DEBUG
-    if (a->_marked == true) {
+    if (a->_marked) {
         std::cout << "D@" << a->_headsPtr << "\n";
     }
 #endif
@@ -230,7 +228,7 @@ bool ArenaDereference(Arena* a, void* ptr) {
     if (zone < 0) return false;
 
     auto refCount = GetRefCount(a, zone);
-    if (refCount == 0) return false; // Overfree. Fix your code.
+    if (refCount == 0) return false; // Over-free. Fix your code.
 
     refCount--;
     SetRefCount(a, zone, refCount);
@@ -245,11 +243,11 @@ bool ArenaDereference(Arena* a, void* ptr) {
 
 // Add a reference to memory, to delay deallocation. When no references are left, the memory may be deallocated
 bool ArenaReference(Arena* a, void* ptr) {
-    if (a == NULL) return false;
-    if (ptr == NULL) return false;
+    if (a == nullptr) return false;
+    if (ptr == nullptr) return false;
 
 #ifdef ARENA_DEBUG
-    if (a->_marked == true) {
+    if (a->_marked) {
         std::cout << "R@" << a->_headsPtr << "\n";
     }
 #endif
@@ -267,7 +265,7 @@ bool ArenaReference(Arena* a, void* ptr) {
 // Read statistics for this Arena. Pass `NULL` for anything you're not interested in.
 void ArenaGetState(Arena* a, size_t* allocatedBytes, size_t* unallocatedBytes,
     int* occupiedZones, int* emptyZones, int* totalReferenceCount, size_t* largestContiguous) {
-    if (a == NULL) return;
+    if (a == nullptr) return;
 
     size_t allocated = 0;
     size_t unallocated = 0;
@@ -292,20 +290,20 @@ void ArenaGetState(Arena* a, size_t* allocatedBytes, size_t* unallocatedBytes,
         if (free > largestFree) largestFree = free;
     }
 
-    if (allocatedBytes != NULL) *allocatedBytes = allocated;
-    if (unallocatedBytes != NULL) *unallocatedBytes = unallocated;
-    if (occupiedZones != NULL) *occupiedZones = occupied;
-    if (emptyZones != NULL) *emptyZones = empty;
-    if (totalReferenceCount != NULL) *totalReferenceCount = totalReferences;
-    if (largestContiguous != NULL) *largestContiguous = largestFree;
+    if (allocatedBytes != nullptr) *allocatedBytes = allocated;
+    if (unallocatedBytes != nullptr) *unallocatedBytes = unallocated;
+    if (occupiedZones != nullptr) *occupiedZones = occupied;
+    if (emptyZones != nullptr) *emptyZones = empty;
+    if (totalReferenceCount != nullptr) *totalReferenceCount = totalReferences;
+    if (largestContiguous != nullptr) *largestContiguous = largestFree;
 }
 
 // Get an offset into the arena for a pointer to memory
 uint32_t ArenaPtrToOffset(Arena* a, void* ptr) {
     if (!ArenaContainsPointer(a, ptr)) return 0;
 
-    size_t base = (size_t)(a->_start);
-    size_t actual = (size_t)ptr;
+    auto base = (size_t)(a->_start);
+    auto actual = (size_t)ptr;
 
     if (base >= actual) return 0;
 
@@ -314,9 +312,11 @@ uint32_t ArenaPtrToOffset(Arena* a, void* ptr) {
 
 // Get a raw memory pointer from an offset into an arena
 void* ArenaOffsetToPtr(Arena* a, uint32_t offset) {
-    size_t base = (size_t)(a->_start);
+    auto base = (size_t)(a->_start);
     size_t actual = base + (size_t)offset - 1;
-    if (!ArenaContainsPointer(a, (void*)actual)) return NULL; // not a valid answer
+    if (!ArenaContainsPointer(a, (void*)actual)) return nullptr; // not a valid answer
     return (void*)actual;
 }
 
+
+#pragma clang diagnostic pop

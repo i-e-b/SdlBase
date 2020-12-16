@@ -1,9 +1,12 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
+#pragma ide diagnostic ignored "OCUnusedMacroInspection"
 #pragma once
 
-#ifndef arenaallocator_h
-#define arenaallocator_h
+#ifndef ArenaAllocator_h
+#define ArenaAllocator_h
 
-#include <stdint.h>
+#include <cstdint>
 
 // Maximum size of a single allocation
 #define ARENA_ZONE_SIZE 65535
@@ -64,3 +67,4 @@ void ArenaGetState(Arena* a, size_t* allocatedBytes, size_t* unallocatedBytes, i
 void TraceArena(Arena* a, bool traceOn);
 
 #endif
+#pragma clang diagnostic pop

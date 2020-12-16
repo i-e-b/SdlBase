@@ -794,7 +794,7 @@ void AddGlyph(ScanBuffer *buf, char c, int x, int y, int z, uint32_t color) {
     uint16_t* points = charMap[c - 33];
 
     // set objectId, color, and depth
-    int objId = buf->itemCount;
+    uint16_t objId = buf->itemCount;
     buf->itemCount ++;
     SetMaterial(buf, objId, z, color);
 

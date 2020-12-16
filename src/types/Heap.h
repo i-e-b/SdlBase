@@ -1,3 +1,6 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedMacroInspection"
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 #pragma once
 
 #ifndef heap_h
@@ -52,3 +55,5 @@ bool HeapIsEmpty(Heap* H);
 
 
 #endif
+
+#pragma clang diagnostic pop

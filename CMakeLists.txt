@@ -3,6 +3,7 @@ project(SdlBase)
 
 
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX /wd4068") # really picky warnings, as errors, suppress 'unknown pragma' -- most of the clang-lint stuff
 set(CMAKE_CXX_FLAGS_RELEASE "/O2") # When using MSVC compiler
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")

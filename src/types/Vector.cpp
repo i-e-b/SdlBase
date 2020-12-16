@@ -3,7 +3,7 @@
 
 #include "RawData.h"
 
-#include <stdint.h>
+#include <cstdint>
 
 typedef struct Vector {
     bool IsValid; // if this is false, creation failed
@@ -13,19 +13,19 @@ typedef struct Vector {
     // Calculated parts
 
     // Number of data entries in each chunk (should always be a power of 2)
-    int ElemsPerChunk;
+    uint32_t ElemsPerChunk;
     // Log2 of `ElemsPerChunk`
-    int ElemChunkLog2;
+    uint32_t ElemChunkLog2;
     // Number of bytes in each element
-    int ElementByteSize;
+    uint32_t ElementByteSize;
     // Size of an allocated chunk (should be `ElemsPerChunk` * `ElementByteSize`)
-    unsigned short ChunkBytes;
+    uint16_t ChunkBytes;
 
     // dynamic parts
 
-    unsigned int _elementCount;     // how long is the logical array
-    unsigned int _baseOffset;       // how many elements should be ignored from first chunk (for de-queueing)
-    int  _skipEntries;              // how long is the logical skip table
+    uint32_t _elementCount;     // how long is the logical array
+    uint32_t _baseOffset;       // how many elements should be ignored from first chunk (for de-queueing)
+    uint32_t  _skipEntries;              // how long is the logical skip table
     bool _skipTableDirty;           // does the skip table need updating?
     bool _rebuilding;               // are we in the middle of rebuilding the skip table?
 
@@ -88,7 +88,7 @@ const long SKIP_TABLE_SIZE_LIMIT = 2048;
   * [ChunkIdx]
   * [ChunkPtr]
   *
-  * Recalculate that after a prealloc, or after a certain number of chunks
+  * Recalculate that after a preallocate, or after a certain number of chunks
   * have been added. This table could be biased, but for simplicity just
   * evenly distribute for now.
   */
@@ -96,36 +96,34 @@ const long SKIP_TABLE_SIZE_LIMIT = 2048;
 void MaybeRebuildSkipTable(Vector *v); // defined later
 
 // abstract over alloc/free to help us pin to one arena
-inline void* VecCAlloc(Vector *v, int count, int size) {
-    if (v->_arena == NULL) return NULL;
+inline void* VecCAlloc(Vector *v, int count, size_t size) {
+    if (v->_arena == nullptr) return nullptr;
     return ArenaAllocateAndClear(v->_arena, count*size);
 }
 inline void VecFree(Vector *v, void* ptr) {
     ArenaDereference(v->_arena, ptr);
 }
-inline void* VecAlloc(Vector *v, int size) {
-    if (v->_arena == NULL) return NULL;
+inline void* VecAlloc(Vector *v, size_t size) {
+    if (v->_arena == nullptr) return nullptr;
     return ArenaAllocate(v->_arena,size);
 }
 
 // add a new chunk at the end of the chain
 void *NewChunk(Vector *v) {
     auto ptr = VecCAlloc(v, 1, v->ChunkBytes); // calloc to avoid garbage data in the chunks
-    if (ptr == NULL) return NULL;
+    if (ptr == nullptr) return nullptr;
 
     ((size_t*)ptr)[0] = 0; // set the continuation pointer of the new chunk to invalid
-    if (v->_endChunkPtr != NULL) ((size_t*)v->_endChunkPtr)[0] = (size_t)ptr;  // update the continuation pointer of the old end chunk
+    if (v->_endChunkPtr != nullptr) ((size_t*)v->_endChunkPtr)[0] = (size_t)ptr;  // update the continuation pointer of the old end chunk
     v->_endChunkPtr = (char*)ptr; // update the end chunk pointer
-    //v->_skipTableDirty = true; // updating the skip table wouldn't be wasted
 
     return ptr;
 }
 
-// This is the core of most of the containers in MECS.
 // It's very important this is correct and optimal
 // `chunkPtr` returns the memory address of a vector chunk
 // `chunkIndex` returns the chunk index where the logical index was found
-bool FindNearestChunk(Vector *v, int targetIndex, void **chunkPtr, unsigned int *chunkIndex) {
+bool FindNearestChunk(Vector *v, uint32_t targetIndex, void **chunkPtr, unsigned int *chunkIndex) {
 	uint baseOffset = v->_baseOffset;
 	uint elemCount = v->_elementCount;
 	uint realElemCount = elemCount + baseOffset;
@@ -173,8 +171,8 @@ bool FindNearestChunk(Vector *v, int targetIndex, void **chunkPtr, unsigned int 
     if (v->_skipEntries > 1)
     {
         // guess search bounds
-        int guess = ((targetChunkIdx - 1) * v->_skipEntries) / endChunkIdx;
-        int lower = guess - 1;
+        auto guess = ((targetChunkIdx - 1) * v->_skipEntries) / endChunkIdx;
+        auto lower = guess - 1;
         if (lower < 0) lower = 0;
 
         var baseAddr = byteOffset(v->_skipTable, (SKIP_ELEM_SIZE * lower)); // pointer to skip table entry
@@ -184,14 +182,14 @@ bool FindNearestChunk(Vector *v, int targetIndex, void **chunkPtr, unsigned int 
 
     var walk = targetChunkIdx - startChunkIdx;
     if (walk > 4 && v->_skipEntries < SKIP_TABLE_SIZE_LIMIT) {
-        v->_skipTableDirty = true; // if we are walking too far, try builing a better table
+        v->_skipTableDirty = true; // if we are walking too far, try building a better table
     }
 
     // 4. Walk the chain until we find the chunk we want
     for (; startChunkIdx < targetChunkIdx; startChunkIdx++)
     {
         auto next = readPtr(chunkHeadPtr, 0);
-        if (next == NULL) {
+        if (next == nullptr) {
             // walk chain failed! We will store the last step in case it's useful.
             *chunkPtr = chunkHeadPtr;
             return false;
@@ -209,9 +207,9 @@ inline void RebuildSkipTable(Vector *v)
     v->_skipTableDirty = false;
     auto chunkTotal = v->_elementCount >> v->ElemChunkLog2;
     if (chunkTotal < 4) { // not worth having a skip table
-        if (v->_skipTable != NULL) VecFree(v, v->_skipTable);
+        if (v->_skipTable != nullptr) VecFree(v, v->_skipTable);
         v->_skipEntries = 0;
-        v->_skipTable = NULL;
+        v->_skipTable = nullptr;
         v->_rebuilding = false;
         return;
     }
@@ -223,7 +221,7 @@ inline void RebuildSkipTable(Vector *v)
     // Find representative chunks using the existing table.
     // (finding will be a combination of search and scan)
     auto newTablePtr = VecAlloc(v, SKIP_ELEM_SIZE * entries);
-    if (newTablePtr == NULL) { v->_rebuilding = false; return; } // live with the old one
+    if (newTablePtr == nullptr) { v->_rebuilding = false; return; } // live with the old one
 
     auto stride = v->_elementCount / entries;
     if (stride < 1) stride = 1;
@@ -237,15 +235,15 @@ inline void RebuildSkipTable(Vector *v)
     for (uint i = 0; i < entries; i++) {
         found = FindNearestChunk(v, target, &chunkPtr, &chunkIndex);
 
-        if (!found || chunkPtr == NULL) { // total fail
+        if (!found || chunkPtr == nullptr) { // total fail
             VecFree(v,newTablePtr);
             v->_rebuilding = false;
             return;
         }
 
-        var iptr = byteOffset(newTablePtr, (SKIP_ELEM_SIZE * i)); // 443
-        writeUint(iptr, 0, chunkIndex);
-        writePtr(iptr, INDEX_SIZE, chunkPtr); // TODO: !!! This fails at large sizes!
+        var indexPtr = byteOffset(newTablePtr, (SKIP_ELEM_SIZE * i)); // 443
+        writeUint(indexPtr, 0, chunkIndex);
+        writePtr(indexPtr, INDEX_SIZE, chunkPtr); // TODO: !!! This fails at large sizes!
         newSkipEntries++;
         target += stride;
     }
@@ -257,7 +255,7 @@ inline void RebuildSkipTable(Vector *v)
     }
 
     v->_skipEntries = newSkipEntries;
-    if (v->_skipTable != NULL) VecFree(v, v->_skipTable);
+    if (v->_skipTable != nullptr) VecFree(v, v->_skipTable);
     v->_skipTable = newTablePtr;
     v->_rebuilding = false;
 }
@@ -271,10 +269,10 @@ inline void MaybeRebuildSkipTable(Vector *v) {
 
 // Find the base pointer of the data in the given vector slot.
 // This gets *hammered* by many calls in the system, so it's a good idea to keep it optimal.
-inline void * PtrOfElem(Vector *v, int index) {
-    if (v == NULL) return NULL;
-    while (index < 0) { index += v->_elementCount; } // allow negative index syntax
-    if (index >= v->_elementCount) return NULL;
+inline void * PtrOfElem(Vector *v, uint32_t index) {
+    if (v == nullptr) return nullptr;
+    while (index < 0) { index += (int)(v->_elementCount); } // allow negative index syntax
+    if (index >= v->_elementCount) return nullptr;
 
     var entryIdx = (index + v->_baseOffset) % v->ElemsPerChunk;
 
@@ -288,9 +286,9 @@ inline void * PtrOfElem(Vector *v, int index) {
     }
 	/* */
 
-    void *chunkPtr = NULL;
+    void *chunkPtr = nullptr;
     uint32_t realIdx = 0;
-    if (!FindNearestChunk(v, index, &chunkPtr, &realIdx)) return NULL;
+    if (!FindNearestChunk(v, index, &chunkPtr, &realIdx)) return nullptr;
 
     return byteOffset(chunkPtr, PTR_SIZE + (v->ElementByteSize * entryIdx));
 }
@@ -307,10 +305,10 @@ uint32_t Log2(uint32_t i) {
 }
 
 // Create a new dynamic vector with the given element size (must be fixed per vector) in a specific memory arena
-Vector *VectorAllocateArena(Arena* a, int elementSize) {
-    if (a == NULL) return NULL;
+Vector *VectorAllocateArena(Arena* a, size_t elementSize) {
+    if (a == nullptr) return nullptr;
     auto result = (Vector*)ArenaAllocateAndClear(a, sizeof(Vector));
-    if (result == NULL) return NULL;
+    if (result == nullptr) return nullptr;
 
     result->_arena = a;
     result->ElementByteSize = elementSize;
@@ -335,14 +333,14 @@ Vector *VectorAllocateArena(Arena* a, int elementSize) {
 
     // Make a table, which can store a few chunks, and can have a next-chunk-table pointer
     // Each chunk can hold a few elements.
-    result->_skipEntries = NULL;
-    result->_skipTable = NULL;
-    result->_endChunkPtr = NULL;
-    result->_baseChunkTable = NULL;
+    result->_skipEntries = 0;
+    result->_skipTable = nullptr;
+    result->_endChunkPtr = nullptr;
+    result->_baseChunkTable = nullptr;
 
     auto baseTable = NewChunk(result);
 
-    if (baseTable == NULL) {
+    if (baseTable == nullptr) {
         result->IsValid = false;
         return result;
     }
@@ -356,61 +354,61 @@ Vector *VectorAllocateArena(Arena* a, int elementSize) {
     return result;
 }
 
-Vector *VectorAllocate(int elementSize) {
+Vector *VectorAllocate(size_t elementSize) {
     return VectorAllocateArena(MMCurrent(), elementSize);
 }
 
 bool VectorIsValid(Vector *v) {
-    if (v == NULL) return false;
+    if (v == nullptr) return false;
     return v->IsValid;
 }
 
 void VectorClear(Vector *v) {
-    if (v == NULL) return;
-    if (v->IsValid == false) return;
+    if (v == nullptr) return;
+    if (!v->IsValid) return;
 
     v->_elementCount = 0;
     v->_baseOffset = 0;
     v->_skipEntries = 0;
 
     // empty out the skip table, if present
-    if (v->_skipTable != NULL) {
+    if (v->_skipTable != nullptr) {
         VecFree(v, v->_skipTable);
-        v->_skipTable = NULL;
+        v->_skipTable = nullptr;
     }
 
     // Walk through the chunk chain, removing until we hit an invalid pointer
     var current = readPtr(v->_baseChunkTable, 0); // read from *second* chunk, if present
     v->_endChunkPtr = v->_baseChunkTable;
-    writePtr(v->_baseChunkTable, 0, NULL); // write a null into the chain link
+    writePtr(v->_baseChunkTable, 0, nullptr); // write a null into the chain link
 
-    while (current != NULL) {
+    while (current != nullptr) {
         var next = readPtr(current, 0);
-        writePtr(current, 0, NULL); // just in case we have a loop
+        writePtr(current, 0, nullptr); // just in case we have a loop
         VecFree(v, current);
         current = next;
     }
 }
 
 void VectorDeallocate(Vector *v) {
-    if (v == NULL) return;
+    if (v == nullptr) return;
     v->IsValid = false;
-    if (v->_skipTable != NULL) VecFree(v, v->_skipTable);
-    v->_skipTable = NULL;
+    if (v->_skipTable != nullptr) VecFree(v, v->_skipTable);
+    v->_skipTable = nullptr;
     // Walk through the chunk chain, removing until we hit an invalid pointer
     var current = v->_baseChunkTable;
     while (true) {
-        if (current == NULL) break; // end of chunks
+        if (current == nullptr) break; // end of chunks
 
         var next = readPtr(current, 0);
-        writePtr(current, 0, NULL); // just in case we have a loop
+        writePtr(current, 0, nullptr); // just in case we have a loop
         VecFree(v, current);
 
         if (current == v->_endChunkPtr) break; // sentinel
         current = (char*)next;
     }
-    v->_baseChunkTable = NULL;
-    v->_endChunkPtr = NULL;
+    v->_baseChunkTable = nullptr;
+    v->_endChunkPtr = nullptr;
     v->_elementCount = 0;
     v->ElementByteSize = 0;
     v->ElemsPerChunk = 0;
@@ -419,21 +417,21 @@ void VectorDeallocate(Vector *v) {
 	ArenaDereference(a, v);
 }
 
-inline int VectorLength(Vector *v) {
-    if (v == NULL) return 0;
+inline unsigned int VectorLength(Vector *v) {
+    if (v == nullptr) return 0;
     return v->_elementCount;
 }
 
 bool VectorPush(Vector *v, void* value) {
-    if (v == NULL) return false;
+    if (v == nullptr) return false;
     var entryIdx = (v->_elementCount + v->_baseOffset) % v->ElemsPerChunk;
 
-    void *chunkPtr = NULL;
+    void *chunkPtr = nullptr;
     uint index;
     if (!FindNearestChunk(v, v->_elementCount, &chunkPtr, &index)) // need a new chunk, write at start
     {
         var ok = NewChunk(v);
-        if (ok == NULL) {
+        if (ok == nullptr) {
             v->IsValid = false;
             return false;
         }
@@ -441,7 +439,7 @@ bool VectorPush(Vector *v, void* value) {
         v->_elementCount++;
         return true;
     }
-    if (chunkPtr == NULL) return false;
+    if (chunkPtr == nullptr) return false;
 
     // Writing value into existing chunk
     writeValue(chunkPtr, PTR_SIZE + (v->ElementByteSize * entryIdx), value, v->ElementByteSize);
@@ -459,10 +457,10 @@ void VectorFreeCache(Vector* v, void* cache) {
     VecFree(v, cache);
 }
 
-void* VectorCacheRange(Vector* v, int* lowIndex, int* highIndex) {
-    if (v == NULL || v->_elementCount < 1) return NULL;
+void* VectorCacheRange(Vector* v, uint32_t* lowIndex, uint32_t* highIndex) {
+    if (v == nullptr || v->_elementCount < 1) return nullptr;
     uint32_t chunkIndex = 0;
-    void* chunkPtr = NULL;
+    void* chunkPtr = nullptr;
 
     // force to range, and update
     if ((*lowIndex) < 0) *lowIndex = 0;
@@ -475,12 +473,12 @@ void* VectorCacheRange(Vector* v, int* lowIndex, int* highIndex) {
     uint32_t index = ((*lowIndex) + v->_baseOffset) % v->ElemsPerChunk;
    
     // find first chunk
-    if (!FindNearestChunk(v, *lowIndex, &chunkPtr, &chunkIndex)) return NULL;
+    if (!FindNearestChunk(v, *lowIndex, &chunkPtr, &chunkIndex)) return nullptr;
 
     // make memory for our chunk
     auto esz = v->ElementByteSize;
     auto block = VecAlloc(v, esz * requiredElems);
-    if (block == NULL) return NULL;
+    if (block == nullptr) return nullptr;
 
     // now, scan along (switching chunk as required) until full
     auto dst = block;
@@ -506,7 +504,7 @@ void* VectorCacheRange(Vector* v, int* lowIndex, int* highIndex) {
 bool VectorCopy(Vector * v, unsigned int index, void * outValue)
 {
     var ptr = PtrOfElem(v, index);
-    if (ptr == NULL) return false;
+    if (ptr == nullptr) return false;
 
     writeValue(outValue, 0, ptr, v->ElementByteSize);
     return true;
@@ -514,12 +512,12 @@ bool VectorCopy(Vector * v, unsigned int index, void * outValue)
 
 bool VectorDequeue(Vector * v, void * outValue) {
     // Special cases:
-    if (v == NULL) return false;
+    if (v == nullptr) return false;
     if (!v->IsValid) return false;
     if (v->_elementCount < 1) return false;
 
     // read the element at index `_baseOffset`, then increment `_baseOffset`.
-    if (outValue != NULL) {
+    if (outValue != nullptr) {
         auto ptr = byteOffset(v->_baseChunkTable, PTR_SIZE + (v->_baseOffset * v->ElementByteSize));
         writeValue(outValue, 0, ptr, v->ElementByteSize);
     }
@@ -530,12 +528,12 @@ bool VectorDequeue(Vector * v, void * outValue) {
     if (v->_baseOffset < v->ElemsPerChunk) return true;
 
     // If `_baseOffset` is equal to chunk length, deallocate the first chunk.
-    // When we we deallocate a chunk, copy a trunated version of the skip table
+    // When we we deallocate a chunk, copy a truncated version of the skip table
     // if we're on the last chunk, don't deallocate, but just reset the base offset.
 
     v->_baseOffset = 0;
     auto nextChunk = readPtr(v->_baseChunkTable, 0);
-    if (nextChunk == NULL || v->_baseChunkTable == v->_endChunkPtr) { // this is the only chunk
+    if (nextChunk == nullptr || v->_baseChunkTable == v->_endChunkPtr) { // this is the only chunk
         return true;
     }
     // Advance the base and free the old
@@ -543,14 +541,14 @@ bool VectorDequeue(Vector * v, void * outValue) {
     v->_baseChunkTable = (char*)nextChunk;
     VecFree(v, oldChunk);
 
-    if (v->_skipTable == NULL) return true; // don't need to fix the table
+    if (v->_skipTable == nullptr) return true; // don't need to fix the table
 
     // Make a truncated version of the skip table
     v->_skipEntries--;
     if (v->_skipEntries < 4) { // no point having a table
         VecFree(v, v->_skipTable);
         v->_skipEntries = 0;
-        v->_skipTable = NULL;
+        v->_skipTable = nullptr;
         return true;
     }
     // Copy of the skip table with first element gone
@@ -567,22 +565,22 @@ bool VectorDequeue(Vector * v, void * outValue) {
 }
 
 bool VectorPop(Vector *v, void *target) {
-    if (v == NULL || v->_elementCount == 0) return false;
+    if (v == nullptr || v->_elementCount == 0) return false;
 
     var index = v->_elementCount - 1;
     var entryIdx = (index + v->_baseOffset) % v->ElemsPerChunk;
 
     // Get the value
     var result = byteOffset(v->_endChunkPtr, PTR_SIZE + (v->ElementByteSize * entryIdx));
-    if (result == NULL) return false;
-    if (target != NULL) { // need to copy element, as we might dealloc the chunk it lives in
+    if (result == nullptr) return false;
+    if (target != nullptr) { // need to copy element, as we might dealloc the chunk it lives in
         writeValue(target, 0, result, v->ElementByteSize);
     }
 
     // Clean up if we've emptied a chunk that isn't the initial one
     if (entryIdx < 1 && v->_elementCount > 1) {
         // need to dealloc end chunk
-        void *prevChunkPtr = NULL;
+        void *prevChunkPtr = nullptr;
         uint deadChunkIdx = 0;
         if (!FindNearestChunk(v, index - 1, &prevChunkPtr, &deadChunkIdx)
             || prevChunkPtr == v->_endChunkPtr) {
@@ -592,7 +590,7 @@ bool VectorPop(Vector *v, void *target) {
         }
         VecFree(v, v->_endChunkPtr);
         v->_endChunkPtr = (char*)prevChunkPtr;
-        writePtr(prevChunkPtr, 0, NULL); // remove the 'next' pointer from the new end chunk
+        writePtr(prevChunkPtr, 0, nullptr); // remove the 'next' pointer from the new end chunk
 
         if (v->_skipEntries > 0) {
             // Check to see if we've made the skip list invalid
@@ -618,8 +616,8 @@ bool VectorPeek(Vector *v, void* target) {
 
     // Get the value
     var result = byteOffset(v->_endChunkPtr, PTR_SIZE + (v->ElementByteSize * entryIdx));
-    if (result == NULL) return false;
-    if (target != NULL) {
+    if (result == nullptr) return false;
+    if (target != nullptr) {
         writeValue(target, 0, result, v->ElementByteSize);
     }
     return true;
@@ -628,9 +626,9 @@ bool VectorPeek(Vector *v, void* target) {
 bool VectorSet(Vector *v, int index, void* element, void* prevValue) {
     // push in the value, returning previous value
     var ptr = PtrOfElem(v, index);
-    if (ptr == NULL) return false;
+    if (ptr == nullptr) return false;
 
-    if (prevValue != NULL) {
+    if (prevValue != nullptr) {
         writeValue(prevValue, 0, ptr, v->ElementByteSize);
     }
 
@@ -638,7 +636,7 @@ bool VectorSet(Vector *v, int index, void* element, void* prevValue) {
     return true;
 }
 
-bool VectorPrealloc(Vector *v, unsigned int length) {
+bool VectorPreallocate(Vector *v, unsigned int length) {
     var remain = length - v->_elementCount;
     if (remain < 1) return true;
 
@@ -646,13 +644,13 @@ bool VectorPrealloc(Vector *v, unsigned int length) {
 
     // Walk through the chunk chain, adding where needed
     var chunkHeadPtr = v->_baseChunkTable;
-    for (int i = 0; i < newChunkIdx; i++)
+    for (uint32_t i = 0; i < newChunkIdx; i++)
     {
         var nextChunkPtr = readPtr(chunkHeadPtr, 0);
-        if (nextChunkPtr == NULL) {
+        if (nextChunkPtr == nullptr) {
             // need to alloc a new chunk
             nextChunkPtr = NewChunk(v);
-            if (nextChunkPtr == NULL) return false;
+            if (nextChunkPtr == nullptr) return false;
         }
         chunkHeadPtr = (char*)nextChunkPtr;
     }
@@ -669,7 +667,7 @@ inline bool VectorSwapInternal(Vector *v, unsigned int index1, unsigned int inde
     var A = PtrOfElem(v, index1);
     var B = PtrOfElem(v, index2);
 
-    if (A == NULL || B == NULL) return false;
+    if (A == nullptr || B == nullptr) return false;
 
     writeValue(tmp, 0, A, bytes); // tmp = A
     writeValue(A, 0, B, bytes); // A = B
@@ -679,13 +677,13 @@ inline bool VectorSwapInternal(Vector *v, unsigned int index1, unsigned int inde
 }
 
 bool VectorSwap(Vector *v, unsigned int index1, unsigned int index2) {
-    if (v == NULL) return false;
+    if (v == nullptr) return false;
 
     var bytes = v->ElementByteSize;
     var tmp = VecAlloc(v, bytes);
-    if (tmp == NULL) return false;
+    if (tmp == nullptr) return false;
 
-    auto res = VectorSwapInternal(v, index1, index2, tmp, bytes);
+    VectorSwapInternal(v, index1, index2, tmp, bytes);
 
     VecFree(v, tmp);
 
@@ -694,17 +692,17 @@ bool VectorSwap(Vector *v, unsigned int index1, unsigned int index2) {
 
 bool VectorReverse(Vector *v) {
     // we could probably optimise this quite a lot
-    if (v == NULL) return false;
+    if (v == nullptr) return false;
 
     auto bytes = v->ElementByteSize;
     auto tmp = VecAlloc(v, bytes);
-    if (tmp == NULL) return false;
+    if (tmp == nullptr) return false;
 
     auto end = v->_elementCount;
     auto halfLength = end / 2;
-    for (int i = 0; i < halfLength; i++) {
+    for (uint32_t i = 0; i < halfLength; i++) {
         end--;
-        auto res = VectorSwapInternal(v, i, end, tmp, bytes);
+        VectorSwapInternal(v, i, end, tmp, bytes);
     }
 
     VecFree(v, tmp);
@@ -715,9 +713,7 @@ bool VectorReverse(Vector *v) {
 // Merge with minimal copies. Input values should be in arr1. Returns the array that the final result is in.
 // The input array should have had the first set of swaps done (partition size = 1)
 // Compare should return 0 if the two values are equal, negative if A should be before B, and positive if B should be before A.
-void* IterativeMergeSort(void* arr1, void* arr2, int n, int elemSize, int(*compareFunc)(void* A, void* B)) {
-    bool anySwaps = false;
-
+void* IterativeMergeSort(void* arr1, void* arr2, int n, int elemSize, int(*compareFunc)(void*, void*)) {
     auto A = arr2; // we will be flipping the array pointers around
     auto B = arr1;
 
@@ -755,10 +751,10 @@ void* IterativeMergeSort(void* arr1, void* arr2, int n, int elemSize, int(*compa
     return B;
 }
 
-void VectorSort(Vector *v, int(*compareFunc)(void* A, void* B)) {
+void VectorSort(Vector *v, int(*compareFunc)(void*, void*)) {
     // Available Plans:
 
-    // A - normal merge: (extra space ~N + chunksize)
+    // A - normal merge: (extra space ~N + chunkSize)
     // 1. in each chunk, run the simple array-based merge-sort
     // 2. merge-sort between pairs of chunks
     // 3. keep merging pairs into longer chains until all sorted
@@ -769,7 +765,7 @@ void VectorSort(Vector *v, int(*compareFunc)(void* A, void* B)) {
     // 3. pick the lowest element in the array, and replace with next element from that chunk
     // 4. repeat until all empty
     //
-    // C - compare-exchange (extra space ~chunksize)
+    // C - compare-exchange (extra space ~chunkSize)
     // 1. each chunk merged
     // 2. we pick a chunk and merge it in turn with each other chunk (so one has values always smaller than other)
     // 3. repeat until sorted (see notebook)
@@ -792,9 +788,9 @@ void VectorSort(Vector *v, int(*compareFunc)(void* A, void* B)) {
     uint32_t n = VectorLength(v);
     auto size = v->ElementByteSize;
     void* arr1 = VecAlloc(v, (n+1) * size); // extra space for swapping
-    if (arr1 == NULL) return;
+    if (arr1 == nullptr) return;
     void* arr2 = VecAlloc(v, n * size);
-    if (arr2 == NULL) { VecFree(v, arr1); return; }
+    if (arr2 == nullptr) { VecFree(v, arr1); return; }
 
     // write into array in pairs, doing the scale=1 merge
     uint32_t i = 0;
@@ -833,19 +829,19 @@ Arena* VectorArena(Vector *v) {
 // Clone a vector into a new arena
 Vector* VectorClone(Vector* source, Arena* a) {
     // this could be optimised, but we need to relocate all pointers properly if we do.
-    if (source == NULL) return NULL;
-    if (a == NULL) a = MMCurrent();
+    if (source == nullptr) return nullptr;
+    if (a == nullptr) a = MMCurrent();
 
     auto len = VectorLength(source);
     auto elemSize = VectorElementSize(source);
     auto result = VectorAllocateArena(a, elemSize);
-    VectorPrealloc(result, len);
+    VectorPreallocate(result, len);
     for (size_t i = 0; i < len; i++) {
         var src = PtrOfElem(source, i);
-        if (src == NULL) continue;
+        if (src == nullptr) continue;
 
         var dst = PtrOfElem(result, i);
-        if (dst == NULL) continue;
+        if (dst == nullptr) continue;
 
         writeValue(dst, 0, src, elemSize);
     }
@@ -853,6 +849,6 @@ Vector* VectorClone(Vector* source, Arena* a) {
 }
 
 int VectorElementSize(Vector * v) {
-    if (v == NULL) return 0;
+    if (v == nullptr) return 0;
     return v->ElementByteSize;
 }

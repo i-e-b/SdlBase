@@ -4,6 +4,8 @@
 #include "BinHeap.h"
 
 #include <cstdlib>
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 using namespace std;
 
 #define ON 0x01
@@ -102,7 +104,7 @@ inline void SetSP(ScanBuffer * buf, int x, int y, uint16_t objectId, uint8_t isO
 inline void SetMaterial(ScanBuffer* buf, uint16_t objectId, int depth, uint32_t color) {
     if (objectId > OBJECT_MAX) return;
     buf->materials[objectId].color = color;
-    buf->materials[objectId].depth = depth;
+    buf->materials[objectId].depth = (int16_t)depth;
 }
 
 // INTERNAL: Write scan switch points into buffer for a single line.
@@ -608,3 +610,5 @@ void RenderBuffer(
     }
 }
 
+
+#pragma clang diagnostic pop

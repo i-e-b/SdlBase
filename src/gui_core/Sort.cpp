@@ -9,7 +9,7 @@ inline bool cmp(SwitchPoint* a, int idx1, int idx2) {
 }
 
 // Merge with minimal copies
-SwitchPoint* IterativeMergeSort(SwitchPoint* source, SwitchPoint* tmp, int n) {
+SwitchPoint* IterativeMergeSort(SwitchPoint* source, SwitchPoint* tmp, uint32_t n) {
     if (n < 2) return source;
 
     auto arr1 = source;
@@ -18,7 +18,7 @@ SwitchPoint* IterativeMergeSort(SwitchPoint* source, SwitchPoint* tmp, int n) {
     auto A = arr2; // we will be flipping the array pointers around
     auto B = arr1;
 
-    for (unsigned int stride = 1; stride < n; stride <<= 1u) { // doubling merge width
+    for (uint32_t stride = 1; stride < n; stride <<= 1u) { // doubling merge width
         
         // swap A and B pointers after each merge set
         { auto swp = A; A = B; B = swp; }
@@ -29,7 +29,7 @@ SwitchPoint* IterativeMergeSort(SwitchPoint* source, SwitchPoint* tmp, int n) {
             uint32_t end = right + stride;
             if (end > n) end = n; // some merge windows will run off the end of the data array
             if (right > n) right = n; // some merge windows will run off the end of the data array
-            int l = left, r = right; // the point we are scanning though the two sets to be merged.
+            uint32_t l = left, r = right; // the point we are scanning though the two sets to be merged.
 
             // copy the lowest candidate across from A to B
             while (l < right && r < end) {

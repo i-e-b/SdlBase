@@ -195,8 +195,8 @@ void StringAppendDouble(String *str, double value) {
     }
 
     // TODO: this whole thing could do with fixing...
-    uint32_t intPart = uValue;
-    uint32_t fracPart = (uValue - intPart) * 100000;
+    auto intPart = (uint32_t)uValue;
+    auto fracPart = (uint32_t)((uValue - intPart) * 100000);
 
     StringAppendInt32(str, intPart);
     VPush_char(str->chars, '.');
@@ -403,12 +403,13 @@ char *SubstringToCStr(String *str, int start, Arena* a) {
     if (start < 0) { // from end
         start += len;
     }
-    if (len > start) { len -= start; }
+    auto s = (uint32_t)start;
+    if (len > s) { len -= s; }
     if (a == nullptr) a = MMCurrent();
 
     auto result = (char*)ArenaAllocate(a, 1 + (sizeof(char) * len)); // need extra byte for '\0'
     for (unsigned int i = 0; i < len; i++) {
-        char *cp = VGet_char(str->chars, (char)(i + start));
+        char *cp = VGet_char(str->chars, (char)(i + s));
         if (cp == nullptr) {
             break;
         }
@@ -705,7 +706,7 @@ bool StringTryParse_int32(String *str, int32_t *dest) {
     int32_t result = 0;
     bool invert = false;
 
-    int i = 0;
+    uint32_t i = 0;
     if (StringCharAtIndex(str, 0) == '-') {
         if (len == 1) return false; // just a `-` symbol
         invert = true; i++;
@@ -774,7 +775,7 @@ bool StringTryParse_double(String *str, double *dest) {
 
     // Combine int and frac
     double scale = 1;
-    for (int s = 0; s < fracStrLen; s++) { scale *= 10; }
+    for (uint32_t s = 0; s < fracStrLen; s++) { scale *= 10; }
     if (dest != nullptr) *dest = intPart + ((double)fracPart / scale);
 
     return true;

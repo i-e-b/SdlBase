@@ -59,10 +59,7 @@ void HandleEvents() {
 // We undefine the `main` macro in SDL_main.h, because it confuses the linker.
 #undef main
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "UnusedLocalVariable"
-int main(int argc, char * argv[])
-#pragma clang diagnostic pop
+int main()//int argc, char * argv[])
 {
     //The window we'll be rendering to
     SDL_Window* window;

@@ -1,3 +1,6 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedMacroInspection"
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 #pragma once
 
 #ifndef hashmap_h
@@ -74,3 +77,4 @@ unsigned int HashMapIntKeyHash(void* key);
 
 
 #endif
+#pragma clang diagnostic pop

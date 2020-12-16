@@ -1,7 +1,9 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 #pragma once
 
-#ifndef memorymanager_h
-#define memorymanager_h
+#ifndef MemoryManager_h
+#define MemoryManager_h
 
 #include "ArenaAllocator.h"
 
@@ -64,3 +66,4 @@ void* MMPopReturn(void* ptr, size_t size);
 Arena* MMCurrent();
 
 #endif
+#pragma clang diagnostic pop

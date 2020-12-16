@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef scanbufferfont_h
-#define scanbufferfont_h
+#ifndef ScanBufferFont_h
+#define ScanBufferFont_h
 
 #include "ScanBufferDraw.h"
 
