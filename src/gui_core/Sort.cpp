@@ -3,8 +3,8 @@
 // minimal sort
 inline bool cmp(SwitchPoint* a, int idx1, int idx2) {
     // sort by position, with `on` to the left of `off`
-    auto p1 = (a[idx1].xpos << 1u) + a[idx1].state;
-    auto p2 = (a[idx2].xpos << 1u) + a[idx2].state;
+    auto p1 = (a[idx1].xPos << 1u) + a[idx1].state;
+    auto p2 = (a[idx2].xPos << 1u) + a[idx2].state;
     return (p1 < p2);
 }
 

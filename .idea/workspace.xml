@@ -67,11 +67,22 @@
       <option name="presentableId" value="Default" />
       <updated>1608036880123</updated>
       <workItem from="1608036882866" duration="38000" />
-      <workItem from="1608036976522" duration="9738000" />
+      <workItem from="1608036976522" duration="16573000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/gui_core/ScanBufferFont.cpp</url>
+          <line>786</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

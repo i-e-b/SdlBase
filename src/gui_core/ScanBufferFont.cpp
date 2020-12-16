@@ -46,7 +46,7 @@
 #define _______(y)  
 
 // Font data (hard coded basic 8x8)
-// pairs of ON & OFF; 1st byte is row, 2nd byte is xpos. 0xFFFF marks the end
+// pairs of ON & OFF; 1st byte is row, 2nd byte is xPos. 0xFFFF marks the end
 // row is upside-down, treat as negative offset from baseline.
 uint16_t ch_A[] = { __xxx__(07)
                     _xx_xx_(06)

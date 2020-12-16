@@ -152,7 +152,8 @@ int main(int argc, char * argv[])
             if (left < FRAME_TIME_TARGET) SDL_Delay(FRAME_TIME_TARGET - left); // still got time? Then wait
             idleTime += FRAME_TIME_TARGET - fTime; // indication of how much slack we have
         }
-#elif
+        fTime = SDL_GetTicks() - fst;
+#else
         fTime = SDL_GetTicks() - fst;
         HandleEvents();
 #endif

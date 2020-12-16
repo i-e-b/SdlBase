@@ -1,3 +1,5 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 #pragma once
 
 #ifndef string_h
@@ -5,7 +7,7 @@
 
 #include "Vector.h"
 #include "ArenaAllocator.h"
-#include <stdint.h>
+#include <cstdint>
 
 // A mutable variable length string structure
 typedef struct String String;
@@ -118,8 +120,8 @@ void StringAppendDouble(String *str, double value);
 
 // Parse an int from a decimal string
 bool StringTryParse_int32(String *str, int32_t *dest);
-// Parse a fixed-point number from a decimal string (F16.16, passed as int32)
-bool StringTryParse_double(String *str, double *dest); // TODO
+// Parse a double from a decimal string
+bool StringTryParse_double(String *str, double *dest);
 
 
 // Append, somewhat like sprintf. `fmt` is taken literally, except for these low ascii chars:
@@ -127,3 +129,5 @@ bool StringTryParse_double(String *str, double *dest); // TODO
 void vStringAppendFormat(String *str, const char* fmt, va_list args);
 
 #endif
+
+#pragma clang diagnostic pop

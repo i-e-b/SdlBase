@@ -1,7 +1,9 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 #pragma once
 
-#ifndef scanbufferdraw_h
-#define scanbufferdraw_h
+#ifndef ScanBufferDraw_h
+#define ScanBufferDraw_h
 
 #include <cstdint>
 
@@ -18,7 +20,7 @@
 // Notes: 1080p resolution is 1920x1080 = 2'073'600 pixels. 2^22 is 4'194'304; 2^21 -1 = 2'097'151
 // Using per-row buffers, we only need 2048, or about 11 bits
 typedef struct SwitchPoint {
-    uint32_t xpos:11;       // position of switch-point, as (y*width)+x; Limits us to 2048 width. (21 bits left)
+    uint32_t xPos:11;       // position of switch-point, as (y*width)+x; Limits us to 2048 width. (21 bits left)
     uint32_t id:16;         // the object ID (used for material lookup, 65k limit) (5 bits left)
     uint32_t state:1;       // 1 = 'on' point, 0 = 'off' point.
     uint32_t reserved:4;
@@ -34,7 +36,7 @@ typedef struct ScanLine {
     int32_t count;          // number of items in the array
     int32_t length;         // memory length of the array
 
-    SwitchPoint* points;    // When drawing to the buffer, we can just append. Before rendering, this must be sorted by xpos
+    SwitchPoint* points;    // When drawing to the buffer, we can just append. Before rendering, this must be sorted by x-pos
 } ScanLine;
 
 // buffer of switch points.
@@ -52,7 +54,7 @@ ScanBuffer *InitScanBuffer(int width, int height);
 
 void FreeScanBuffer(ScanBuffer *buf);
 
-// Fill a triagle with a solid colour
+// Fill a triangle with a solid colour
 void FillTriangle(ScanBuffer *buf,
                   int x0, int y0,
                   int x1, int y1,
@@ -117,7 +119,7 @@ void ClearScanBuffer(ScanBuffer *buf);
 // Do not draw to a scan buffer while it is rendering (switch buffers if you need to)
 void RenderBuffer(
     ScanBuffer *buf, // source scan buffer
-    BYTE* data       // target frame-buffer (must match scanbuffer dimensions)
+    BYTE* data       // target frame-buffer (must match ScanBuffer dimensions)
 );
 
 
@@ -130,3 +132,5 @@ inline void SetSP(ScanBuffer * buf, int x, int y, uint16_t objectId, uint8_t isO
 inline void SetMaterial(ScanBuffer* buf, uint16_t objectId, int depth, uint32_t color);
 
 #endif
+
+//#pragma clang diagnostic pop

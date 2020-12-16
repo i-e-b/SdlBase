@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef rawdata_h
-#define rawdata_h
+#ifndef RawData_h
+#define RawData_h
 
 // A bunch of inline helper methods for dealing with anonymous data types
 
@@ -13,11 +13,11 @@ inline void writeInt(void *ptr, int data) {
 }
 inline void writeIntPrefixValue(void *dst, int priority, void* data, int length) {
     char* src = (char*)data;
-    int* prioPtr = (int*)dst;
+    int* priorityPtr = (int*)dst;
     char* elemPtr = (char*)dst;
     elemPtr += sizeof(int);
 
-    *prioPtr = priority;
+    *priorityPtr = priority;
     for (int i = 0; i < length; i++) {
         *(elemPtr++) = *(src++);
     }
@@ -32,7 +32,7 @@ inline void readIntPrefixValue(void *dest, void* vecEntry, int length) {
     }
 }
 inline void * byteOffset(void *ptr, int byteOffset) {
-    size_t x = (size_t)ptr;
+    auto x = (size_t)ptr;
     x += byteOffset;
     return (void*)x;
 }
@@ -87,8 +87,8 @@ inline void copyAnonArray(void *dstPtr, int dstIndex, void* srcPtr, int srcIndex
     }
 }
 inline void swapMem(void * const a, void * const b, int n) {
-    unsigned char* p = (unsigned char*)a;
-    unsigned char* q = (unsigned char*)b;
+    auto* p = (unsigned char*)a;
+    auto* q = (unsigned char*)b;
     unsigned char* const sentry = (unsigned char*)a + n;
 
     for (; p < sentry; ++p, ++q) {

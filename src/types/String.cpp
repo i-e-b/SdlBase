@@ -1,9 +1,10 @@
 #include "String.h"
-#include "Vector.h"
 #include "MemoryManager.h"
 
-#include <stdarg.h>
+#include <cstdarg>
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 typedef struct String {
     Vector* chars; // vector of characters
     bool isProxy; // normally false. If true, the vector is not touched when deallocating
@@ -16,16 +17,16 @@ RegisterVectorFor(char, V)
 
 inline ArenaPtr FindArena(VectorPtr vec) {
     auto arena = VectorArena(vec);
-	if (arena == NULL) arena = MMCurrent();
+	if (arena == nullptr) arena = MMCurrent();
 	return arena;
 }
 
 String * StringEmpty() {
     auto vec = VAllocate_char();
-    if (!VectorIsValid(vec)) return NULL;
+    if (!VectorIsValid(vec)) return nullptr;
 
     auto arena = FindArena(vec);
-	if (arena == NULL) return NULL;
+	if (arena == nullptr) return nullptr;
 
     auto str = (String*)ArenaAllocateAndClear(arena, sizeof(String));
     str->chars = vec;
@@ -37,9 +38,9 @@ String * StringEmpty() {
 
 // Create an empty string in a specific memory arena
 String *StringEmptyInArena(Arena* a) {
-    if (a == NULL) return NULL;
+    if (a == nullptr) return nullptr;
     auto vec = VAllocateArena_char(a);
-    if (!VectorIsValid(vec)) return NULL;
+    if (!VectorIsValid(vec)) return nullptr;
 
     auto str = (String*)ArenaAllocateAndClear(a, sizeof(String));
     str->chars = vec;
@@ -50,10 +51,10 @@ String *StringEmptyInArena(Arena* a) {
 }
 
 String* StringProxy(String* original) {
-    if (original == NULL) return NULL;
+    if (original == nullptr) return nullptr;
 
     auto arena = FindArena(original->chars);
-	if (arena == NULL) return NULL;
+	if (arena == nullptr) return nullptr;
 
     auto str = (String*)ArenaAllocateAndClear(arena, sizeof(String)); // put the proxy in the same memory as the original
     str->chars = original->chars;
@@ -64,31 +65,31 @@ String* StringProxy(String* original) {
 }
 
 void StringClear(String *str) {
-    if (str == NULL) return;
-    if (VectorIsValid(str->chars) == false) return;
+    if (str == nullptr) return;
+    if (!VectorIsValid(str->chars)) return;
 
     str->hashval = 0;
     VClear(str->chars);
 }
 
 void StringDeallocate(String *str) {
-    if (str == NULL) return;
+    if (str == nullptr) return;
 
     auto arena = FindArena(str->chars);
-    if (str->isProxy == false && VectorIsValid(str->chars) == true) VectorDeallocate(str->chars);
+    if (!str->isProxy && VectorIsValid(str->chars)) VectorDeallocate(str->chars);
 
     ArenaDereference(arena, str);
 }
 
 bool StringIsValid(String *str) {
-    if (str == NULL) return false;
+    if (str == nullptr) return false;
     return VectorIsValid(str->chars);
 }
 
 String* StringNewInArena(const char* str, Arena* a) {
-    auto result = (a == NULL) ? StringEmpty() : StringEmptyInArena(a);
-    if (result == NULL) return NULL;
-    if (VectorIsValid(result->chars) == false) return NULL;
+    auto result = (a == nullptr) ? StringEmpty() : StringEmptyInArena(a);
+    if (result == nullptr) return nullptr;
+    if (!VectorIsValid(result->chars)) return nullptr;
 
     while (*str != 0) {
         VPush_char(result->chars, *str);
@@ -98,20 +99,20 @@ String* StringNewInArena(const char* str, Arena* a) {
 }
 
 String* StringNew(const char * str) {
-    return StringNewInArena(str, NULL);
+    return StringNewInArena(str, nullptr);
 }
 
 String *StringNew(char c) {
     auto result = StringEmpty();
-    if (result == NULL) return NULL;
-    if (VectorIsValid(result->chars) == false) return NULL;
+    if (result == nullptr) return nullptr;
+    if (!VectorIsValid(result->chars)) return nullptr;
     VPush_char(result->chars, c);
     return result;
 }
 
 void StringAppendInt32(String *str, int32_t value) {
-    if (str == NULL) return;
-    if (VectorIsValid(str->chars) == false) return;
+    if (str == nullptr) return;
+    if (!VectorIsValid(str->chars)) return;
 
     str->hashval = 0;
     bool latch = false; // have we got a sig digit yet?
@@ -121,14 +122,14 @@ void StringAppendInt32(String *str, int32_t value) {
         remains = -remains;
     }
     int64_t scale = 1000000000;// max value of int32 = 2147483647
-    int64_t digit = 0;
+    int64_t digit;
 
     while (remains > 0 || scale > 0) {
         digit = remains / scale;
 
         if (digit > 0 || latch) {
             latch = true;
-            VPush_char(str->chars, '0' + digit);
+            VPush_char(str->chars, (char)('0' + (char)digit));
             remains = remains % scale;
         }
 
@@ -146,31 +147,31 @@ String* StringFromInt32(int32_t i) {
 }
 
 void StringAppendInt8Hex(String *str, uint8_t value) {
-    if (str == NULL) return;
-    if (VectorIsValid(str->chars) == false) return;
+    if (str == nullptr) return;
+    if (!VectorIsValid(str->chars)) return;
 
     str->hashval = 0;
     uint32_t nybble = 0xF0;
-    uint32_t digit = 0;
+    uint32_t digit;
     for (int i = 4; i >= 0; i-=4) {
         digit = (value & nybble) >> i;
-        if (digit <= 9) VPush_char(str->chars, '0' + digit);
-        else VPush_char(str->chars, '7' + digit); // line up with capital 'A'
+        if (digit <= 9) VPush_char(str->chars, (char)('0' + digit));
+        else VPush_char(str->chars, (char)('7' + digit)); // line up with capital 'A'
         nybble >>= 4;
     }
 }
 
 void StringAppendInt32Hex(String *str, uint32_t value) {
-    if (str == NULL) return;
-    if (VectorIsValid(str->chars) == false) return;
+    if (str == nullptr) return;
+    if (!VectorIsValid(str->chars)) return;
 
     str->hashval = 0;
     uint32_t nybble = 0xF0000000;
-    uint32_t digit = 0;
+    uint32_t digit;
     for (int i = 28; i >= 0; i-=4) {
         digit = (value & nybble) >> i;
-        if (digit <= 9) VPush_char(str->chars, '0' + digit);
-        else VPush_char(str->chars, '7' + digit); // line up with capital 'A'
+        if (digit <= 9) VPush_char(str->chars, (char)('0' + digit));
+        else VPush_char(str->chars, (char)('7' + digit)); // line up with capital 'A'
         nybble >>= 4;
     }
 }
@@ -182,35 +183,35 @@ void StringAppendInt64Hex(String *str, uint64_t value) {
 }
 
 void StringAppendDouble(String *str, double value) {
-    if (str == NULL) return;
-    if (VectorIsValid(str->chars) == false) return;
+    if (str == nullptr) return;
+    if (!VectorIsValid(str->chars)) return;
 
     str->hashval = 0;
 
-    double uvalue = value;
+    double uValue = value;
     if (value < 0) {
         VPush_char(str->chars, '-');
-        uvalue = -value;
+        uValue = -value;
     }
 
     // TODO: this whole thing could do with fixing...
-    uint32_t intpart = uvalue;
-    uint32_t fracpart = (uvalue - intpart) * 100000;
+    uint32_t intPart = uValue;
+    uint32_t fracPart = (uValue - intPart) * 100000;
 
-    StringAppendInt32(str, intpart);
+    StringAppendInt32(str, intPart);
     VPush_char(str->chars, '.');
 
-    int64_t digit = 0;
+    int64_t digit;
 
     uint32_t scale = 10000;
-    //fracpart = fracpart * scale * 10;
+    //fracPart = fracPart * scale * 10;
     bool tail = true;
-    while (fracpart > 0 && scale > 0) {
-        digit = fracpart / scale;
-        fracpart = fracpart % scale;
+    while (fracPart > 0 && scale > 0) {
+        digit = fracPart / scale;
+        fracPart = fracPart % scale;
 
         tail = false;
-        VPush_char(str->chars, '0' + digit);
+        VPush_char(str->chars, (char)('0' + digit));
 
         scale /= 10;
     }
@@ -219,16 +220,16 @@ void StringAppendDouble(String *str, double value) {
 }
 
 void StringAppend(String *first, String *second) {
-    if (first == NULL || second == NULL) return;
+    if (first == nullptr || second == nullptr) return;
     unsigned int len = VLength(second->chars);
     for (unsigned int i = 0; i < len; i++) {
-        VPush_char(first->chars, *VGet_char(second->chars, i));
+        VPush_char(first->chars, *VGet_char(second->chars, (char)i));
     }
     first->hashval = 0;
 }
 
 String* StringClone(String *str, Arena* a) {
-	if (str == NULL || a == NULL) return NULL;
+	if (str == nullptr || a == nullptr) return nullptr;
 	auto outp = StringEmptyInArena(a);
 	StringAppend(outp, str);
 	return outp;
@@ -241,7 +242,7 @@ String* StringClone(String *str) {
 }
 
 void StringAppend(String *first, const char *second) {
-    if (first == NULL || second == NULL) return;
+    if (first == nullptr || second == nullptr) return;
     while (*second != 0) {
         VPush_char(first->chars, *second);
         second++;
@@ -261,8 +262,8 @@ void StringAppendChar(String *str, char c, int count) {
 
 // internal var-arg appender. `fmt` is taken literally, except for these low ascii chars:
 //'\x01'=(String*); '\x02'=int as dec; '\x03'=int as hex; '\x04'=char; '\x05'=C string (const char*); '\x06'=bool
-void vStringAppendFormat(String *str, const char* fmt, va_list args) {
-    if (str == NULL || fmt == NULL) return;
+void vStringAppendFormat(String *str, const char* fmt, va_list args) { // NOLINT(readability-non-const-parameter)
+    if (str == nullptr || fmt == nullptr) return;
     
     // NOTE: When expanding this, the low-ascii points \x00, \x0A, \x0D are not to be used (null, lf, cr)
     str->hashval = 0;
@@ -324,7 +325,7 @@ void StringNL(String *str) {
 }
 
 char StringDequeue(String* str) {
-    if (str == NULL) return '\0';
+    if (str == nullptr) return '\0';
     str->hashval = 0;
     char c;
     if (!VDequeue_char(str->chars, &c)) return '\0';
@@ -333,7 +334,7 @@ char StringDequeue(String* str) {
 
 // remove and return the last char of the string. If string is empty, returns '\0'
 char StringPop(String* str) {
-    if (str == NULL) return '\0';
+    if (str == nullptr) return '\0';
     str->hashval = 0;
     char c;
     if (!VPop_char(str->chars, &c)) return '\0';
@@ -341,7 +342,7 @@ char StringPop(String* str) {
 }
 
 unsigned int StringLength(String * str) {
-    if (str == NULL) return 0;
+    if (str == nullptr) return 0;
     return VLength(str->chars);
 }
 
@@ -357,12 +358,12 @@ char StringCharAtIndex(String *str, int idx) {
 
 // Create a new string from a range in an existing string. The existing string is not modified
 String *StringSlice(String* str, int startIdx, int length) {
-    if (str == NULL) return NULL;
+    if (str == nullptr) return nullptr;
     auto len = StringLength(str);
-    if (len < 1) return NULL;
+    if (len < 1) return nullptr;
 
     auto arena = FindArena(str->chars);
-	if (arena == NULL) return NULL;
+	if (arena == nullptr) return nullptr;
 
     String *result = StringEmptyInArena(arena);
     while (startIdx < 0) { startIdx += len; }
@@ -373,7 +374,7 @@ String *StringSlice(String* str, int startIdx, int length) {
         if (!VPush_char(result->chars, *VGet_char(str->chars, x))) {
             // out of memory?
             StringDeallocate(result);
-            return NULL;
+            return nullptr;
         }
     }
 
@@ -391,7 +392,7 @@ char *StringToCStr(String *str, Arena* a) {
     auto len = StringLength(str);
     auto result = (char*)ArenaAllocate(a, 1 + (sizeof(char) * len)); // need extra byte for '\0'
     for (unsigned int i = 0; i < len; i++) {
-        result[i] = *VGet_char(str->chars, i);
+        result[i] = *VGet_char(str->chars, (char)i);
     }
     result[len] = 0;
     return result;
@@ -403,12 +404,12 @@ char *SubstringToCStr(String *str, int start, Arena* a) {
         start += len;
     }
     if (len > start) { len -= start; }
-    if (a == NULL) a = MMCurrent();
+    if (a == nullptr) a = MMCurrent();
 
     auto result = (char*)ArenaAllocate(a, 1 + (sizeof(char) * len)); // need extra byte for '\0'
     for (unsigned int i = 0; i < len; i++) {
-        char *cp = VGet_char(str->chars, i + start);
-        if (cp == NULL) {
+        char *cp = VGet_char(str->chars, (char)(i + start));
+        if (cp == nullptr) {
             break;
         }
         result[i] = *cp;
@@ -418,18 +419,18 @@ char *SubstringToCStr(String *str, int start, Arena* a) {
 }
 
 Vector* StringGetByteVector(String* str) {
-    if (str == NULL) return NULL;
+    if (str == nullptr) return nullptr;
     return str->chars;
 }
 
 uint32_t StringHash(String* str) {
-    if (str == NULL) return 0;
+    if (str == nullptr) return 0;
     if (str->hashval != 0) return str->hashval;
 
     uint32_t len = StringLength(str);
     uint32_t hash = len;
     for (uint32_t i = 0; i < len; i++) {
-        hash += *VGet_char(str->chars, i);;
+        hash += *VGet_char(str->chars, i);
         hash ^= hash >> 16;
         hash *= 0x7feb352d;
         hash ^= hash >> 15;
@@ -450,34 +451,34 @@ uint32_t StringHash(String* str) {
 }
 
 void StringToLower(String *str) {
-    if (str == NULL) return;
+    if (str == nullptr) return;
     str->hashval = 0;
     // Simple 7-bit ASCII only at present
     uint32_t len = VLength(str->chars);
     for (uint32_t i = 0; i < len; i++) {
         auto chr = VGet_char(str->chars, i);
         if (*chr >= 'A' && *chr <= 'Z') {
-            *chr = *chr + 0x20;
+            *chr = (char)(*chr + 0x20);
         }
     }
 }
 
 void StringToUpper(String *str) {
-    if (str == NULL) return;
+    if (str == nullptr) return;
     str->hashval = 0;
     // Simple 7-bit ASCII only at present
     uint32_t len = VLength(str->chars);
     for (uint32_t i = 0; i < len; i++) {
         auto chr = VGet_char(str->chars, i);
         if (*chr >= 'a' && *chr <= 'z') {
-            *chr = *chr - 0x20;
+            *chr = (char)(*chr - 0x20);
         }
     }
 }
 
 bool StringStartsWith(String* haystack, String *needle) {
-    if (haystack == NULL) return false;
-    if (needle == NULL) return true;
+    if (haystack == nullptr) return false;
+    if (needle == nullptr) return true;
     auto len = StringLength(needle);
     if (len > StringLength(haystack)) return false;
     for (uint32_t i = 0; i < len; i++) {
@@ -488,8 +489,8 @@ bool StringStartsWith(String* haystack, String *needle) {
     return true;
 }
 bool StringStartsWith(String* haystack, const char* needle) {
-    if (haystack == NULL) return false;
-    if (needle == NULL) return true;
+    if (haystack == nullptr) return false;
+    if (needle == nullptr) return true;
     auto limit = StringLength(haystack);
     uint32_t i = 0;
     while (needle[i] != 0) {
@@ -503,14 +504,14 @@ bool StringStartsWith(String* haystack, const char* needle) {
 
 
 bool StringEndsWith(String* haystack, String *needle) {
-    if (haystack == NULL) return false;
-    if (needle == NULL) return true;
+    if (haystack == nullptr) return false;
+    if (needle == nullptr) return true;
     auto len = StringLength(needle);
     auto off = StringLength(haystack);
     if (len > off) return false;
     off -= len;
     for (uint32_t i = 0; i < len; i++) {
-        auto a = VGet_char(haystack->chars, i + off);
+        auto a = VGet_char(haystack->chars, (char)(i + off));
         auto b = VGet_char(needle->chars, i);
         if (*a != *b) return false;
     }
@@ -524,8 +525,8 @@ bool StringEndsWith(String* haystack, const char* needle) {
 }
 
 bool StringAreEqual(String* a, String* b) {
-    if (a == NULL || a->chars == NULL || !VectorIsValid(a->chars)) return false;
-    if (b == NULL || b->chars == NULL || !VectorIsValid(b->chars)) return false;
+    if (a == nullptr || a->chars == nullptr || !VectorIsValid(a->chars)) return false;
+    if (b == nullptr || b->chars == nullptr || !VectorIsValid(b->chars)) return false;
     uint32_t len = StringLength(a);
     if (len != StringLength(b)) return false;
     for (uint32_t i = 0; i < len; i++) {
@@ -536,8 +537,8 @@ bool StringAreEqual(String* a, String* b) {
     return true;
 }
 bool StringAreEqual(String* a, const char* b) {
-    if (a == NULL) return false;
-    if (b == NULL) return false;
+    if (a == nullptr) return false;
+    if (b == nullptr) return false;
     uint32_t limit = StringLength(a);
     uint32_t i = 0;
     while (b[i] != 0) {
@@ -552,9 +553,9 @@ bool StringAreEqual(String* a, const char* b) {
 
 bool StringFind(String* haystack, String* needle, unsigned int start, unsigned int* outPosition) {
     // get a few special cases out of the way
-    if (haystack == NULL) return false;
-    if (outPosition != NULL) *outPosition = 0;
-    if (needle == NULL) return true; // treating null as empty
+    if (haystack == nullptr) return false;
+    if (outPosition != nullptr) *outPosition = 0;
+    if (needle == nullptr) return true; // treating null as empty
 
     uint32_t hayLen = VLength(haystack->chars);
     uint32_t needleLen = VLength(needle->chars);
@@ -564,18 +565,18 @@ bool StringFind(String* haystack, String* needle, unsigned int start, unsigned i
     }
     
     auto arena = FindArena(haystack->chars);
-	if (arena == NULL) return false;
+	if (arena == nullptr) return false;
 
-    // Rabin–Karp method, but using sum rather than hash (more false positives, but much cheaper on average)
+    // Rabinï¿½Karp method, but using sum rather than hash (more false positives, but much cheaper on average)
     // get a hash of the 'needle', and try to find somewhere in the haystack that matches.
     // double-check if we find one.
     char *matchStr = StringToCStr(needle, arena);
-    char *scanStr = SubstringToCStr(haystack, start, arena);
+    char *scanStr = SubstringToCStr(haystack, (int)start, arena);
 
     // make sum of the needle, and an initial sum of the scan hash
     int match = 0;
     int scan = 0;
-    uint32_t i = 0;
+    uint32_t i;
     for (i = 0; i < needleLen; i++) {
         match += matchStr[i];
         scan += scanStr[i];
@@ -585,7 +586,7 @@ bool StringFind(String* haystack, String* needle, unsigned int start, unsigned i
     for (i = needleLen; i < hayLen; i++) {
         if (match == scan) { // possible match, double check
             uint32_t idx = i - needleLen;
-            if (outPosition != NULL) *outPosition = idx + start;
+            if (outPosition != nullptr) *outPosition = idx + start;
             bool found = true;
             for (uint32_t j = 0; j < needleLen; j++) {
                 if (matchStr[j] != scanStr[j + idx]) {
@@ -626,9 +627,9 @@ bool StringFind(String* haystack, const char * needle, unsigned int start, unsig
 
 // Find the next position of a character. If the outPosition is NULL, it is ignored
 bool StringFind(String* haystack, char needle, unsigned int start, unsigned int* outPosition) {
-    if (haystack == NULL) return false;
-    if (outPosition != NULL) *outPosition = 0;
-    if (needle == NULL) return true; // treating null as empty
+    if (haystack == nullptr) return false;
+    if (outPosition != nullptr) *outPosition = 0;
+    if (needle == 0) return true; // treating null-char as empty
 
     uint32_t hayLen = VLength(haystack->chars);
     if (start < 0) { // from end
@@ -636,10 +637,10 @@ bool StringFind(String* haystack, char needle, unsigned int start, unsigned int*
     }
     if (hayLen < start) return false;
 
-    for (int i = start; i < hayLen; i++) {
+    for (auto i = start; i < hayLen; i++) {
         char c = StringCharAtIndex(haystack, i);
         if (c == needle) {
-            if (outPosition != NULL) *outPosition = i;
+            if (outPosition != nullptr) *outPosition = i;
             return true;
         }
     }
@@ -650,7 +651,7 @@ bool StringFind(String* haystack, char needle, unsigned int start, unsigned int*
 
 // Append part of a source string into the end of the destination
 void StringAppendSubstr(String* dest, String* src, int srcStart, int srcLength) {
-    if (dest == NULL || src == NULL) return;
+    if (dest == nullptr || src == nullptr) return;
     auto slice = StringSlice(src, srcStart, srcLength);
     StringAppend(dest, slice);
     StringDeallocate(slice);
@@ -658,30 +659,30 @@ void StringAppendSubstr(String* dest, String* src, int srcStart, int srcLength) 
 
 // Find any number of instances of a substring. Each one is replaced with a new substring in the output string.
 String* StringReplace(String* haystack, String* needle, String* replacement) {
-    if (haystack == NULL || needle == NULL) return NULL;
+    if (haystack == nullptr || needle == nullptr) return nullptr;
 
-    // use `StringFind` to get to the next occurance.
-    // for each occurance, copy across the chars up to that point, then copy across replacement, then skip the occurance
+    // use `StringFind` to get to the next occurrence.
+    // for each occurrence, copy across the chars up to that point, then copy across replacement, then skip the occurance
     
 	auto arena = FindArena(haystack->chars);
-	if (arena == NULL) return NULL;
+	if (arena == nullptr) return nullptr;
 
     String *result = StringEmptyInArena(arena);
-    if (result == NULL) return NULL;
+    if (result == nullptr) return nullptr;
 
-    int length = StringLength(haystack);
-    int nlen = StringLength(needle);
+    auto length = StringLength(haystack);
+    auto needleLength = StringLength(needle);
     uint32_t tail = 0;
     uint32_t next = 0;
     bool found = StringFind(haystack, needle, tail, &next);
     
     while (found) {
         // replacements
-        StringAppendSubstr(result, haystack, tail, next - tail);
+        StringAppendSubstr(result, haystack, tail, (int)(next - tail));
         StringAppend(result, replacement);
 
         // next one
-        tail = next+nlen;
+        tail = next + needleLength;
         found = StringFind(haystack, needle, tail, &next);
         if (next == 0) {
             found = false;
@@ -697,9 +698,9 @@ String* StringReplace(String* haystack, String* needle, String* replacement) {
 }
 
 bool StringTryParse_int32(String *str, int32_t *dest) {
-    if (str == NULL || dest == NULL) return false;
+    if (str == nullptr || dest == nullptr) return false;
 
-    int len = StringLength(str);
+    auto len = StringLength(str);
     if (len < 1) return false;
     int32_t result = 0;
     bool invert = false;
@@ -732,13 +733,13 @@ bool StringTryParse_int32(String *str, int32_t *dest) {
 
 
 bool StringTryParse_double(String *str, double *dest) {
-    if (str == NULL) return false;
+    if (str == nullptr) return false;
 
     // Plan: parse each side of the '.' as int32, truncate and weld
     uint32_t point = 0;
 
-    int32_t intpart = 0;
-    int32_t fracpart = 0;
+    int32_t intPart = 0;
+    int32_t fracPart = 0;
 
     String *pt = StringNew(".");
     bool found = StringFind(str, pt, 0, &point);
@@ -748,34 +749,34 @@ bool StringTryParse_double(String *str, double *dest) {
     if (!found) {
         int32_t res;
         bool ok = StringTryParse_int32(str, &res);
-        if (ok && dest != NULL) *dest = res;
+        if (ok && dest != nullptr) *dest = res;
         return ok;
     }
 
     // Integer and fraction
     if (point > 0) { // has integer part
         auto intp = StringSlice(str, 0, point);
-        bool ok = StringTryParse_int32(intp, &intpart);
+        bool ok = StringTryParse_int32(intp, &intPart);
         StringDeallocate(intp);
 
         if (!ok) return false;
     }
 
-    auto fracp = StringSlice(str, point + 1, -1);
-    int flen = StringLength(fracp);
-    bool ok = StringTryParse_int32(fracp, &fracpart);
-    StringDeallocate(fracp);
-    if (fracpart < 0) {
+    auto fracStr = StringSlice(str, (int)(point + 1), -1);
+    auto fracStrLen = StringLength(fracStr);
+    bool ok = StringTryParse_int32(fracStr, &fracPart);
+    StringDeallocate(fracStr);
+    if (fracPart < 0) {
         // `1.-2` is not valid!
         return false;
     }
-    if (!ok) fracpart = 0;
+    if (!ok) fracPart = 0;
 
     // Combine int and frac
     double scale = 1;
-    for (int s = 0; s < flen; s++) { scale *= 10; }
-    if (dest != NULL) *dest = intpart + ((double)fracpart / scale);
-        //fix16_sadd(intpart << 16, fix16_div(fracpart << 16, scale << 16));
+    for (int s = 0; s < fracStrLen; s++) { scale *= 10; }
+    if (dest != nullptr) *dest = intPart + ((double)fracPart / scale);
 
     return true;
 }
+#pragma clang diagnostic pop

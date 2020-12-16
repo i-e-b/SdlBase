@@ -91,7 +91,7 @@ inline void SetSP(ScanBuffer * buf, int x, int y, uint16_t objectId, uint8_t isO
     auto idx = line->count;
     auto points = line->points;
 
-    points[idx].xpos = (x < 0) ? 0 : x;
+    points[idx].xPos = (x < 0) ? 0 : x;
     points[idx].id = objectId;
     points[idx].state = isOn;
 
@@ -525,13 +525,13 @@ void RenderScanLine(
     for (int i = 0; i < count; i++)
     {
         SwitchPoint sw = list[i];
-        if (sw.xpos > end) break; // ran off the end
+        if (sw.xPos > end) break; // ran off the end
 
         Material m = materials[sw.id];
 
-        if (sw.xpos > p) { // render up to this switch point
+        if (sw.xPos > p) { // render up to this switch point
             if (on) {
-                auto max = (sw.xpos > end) ? end : sw.xpos;
+                auto max = (sw.xPos > end) ? end : sw.xPos;
                 auto d = (uint32_t*)(data + ((p+yoff) * sizeof(uint32_t)));
                 for (; p < max; p++) {
                     // -- 'fade rate'
@@ -545,7 +545,7 @@ void RenderScanLine(
                     *(d++) = color;
 
                 } // draw pixels up to the point
-            } else p = sw.xpos; // skip direct to the point
+            } else p = sw.xPos; // skip direct to the point
         }
 
         auto heapElem = ElementType{ /*depth:*/ m.depth, /*unique id:*/(int)sw.id, /*lookup index:*/ i };
@@ -579,7 +579,7 @@ void RenderScanLine(
 
 #if 0
         // DEBUG: show switch point in black
-        int pixoff = ((yoff + sw.xpos - 1) * 4);
+        int pixoff = ((yoff + sw.xPos - 1) * 4);
         if (pixoff > 0) { data[pixoff + 0] = data[pixoff + 1] = data[pixoff + 2] = 0; }
         // END
 #endif

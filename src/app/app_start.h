@@ -1,5 +1,5 @@
-#ifndef SDLBASE_APP_START_H
-#define SDLBASE_APP_START_H
+#ifndef SdlBase_App_Start_h
+#define SdlBase_App_Start_h
 
 #include <SDL.h>
 #include "src/gui_core/ScanBufferDraw.h"
@@ -43,4 +43,4 @@ void HandleEvent(SDL_Event *event, volatile ApplicationGlobalState *state);
 // Called once at app stop
 void Shutdown();
 
-#endif //SDLBASE_APP_START_H
+#endif //SdlBase_App_Start_h
