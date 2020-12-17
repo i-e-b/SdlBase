@@ -122,7 +122,6 @@ void SetLine(
 
     uint32_t color = ((r & 0xffu) << 16u) + ((g & 0xffu) << 8u) + (b & 0xffu);
     int h = buf->height;
-    //int w = buf->width;
     uint8_t isOn;
     
     if (y0 < y1) { // going down
@@ -135,7 +134,6 @@ void SetLine(
         tmp = y0; y0 = y1; y1 = tmp;
     }
 
-    //int yoff = (y0 < 0) ? -y0 : 0;
     int top = (y0 < 0) ? 0 : y0;
     int bottom = (y1 > h) ? h : y1;
     float grad = (float)(x0 - x1) / (float)(y0 - y1);
@@ -441,10 +439,82 @@ void ClearScanBuffer(ScanBuffer * buf)
         buf->scanLines[i].dirty = true;
     }
 }
-/*
+
+// Clear a scanline (including background)
+void ResetScanLine(ScanBuffer* buf, int line)
+{
+    if (buf == nullptr) return;
+    if (line < 0 || line >= buf->height) return;
+
+    buf->scanLines[line].count = 0;
+    buf->scanLines[line].dirty = true;
+}
+
+// Clear a scanline, and set a new background color and depth
+void ResetScanLineToColor(ScanBuffer* buf, int line, int z, uint32_t color)
+{
+    if (buf == nullptr) return;
+    if (line < 0 || line >= buf->height) return;
+
+    buf->scanLines[line].count = 0;
+    buf->scanLines[line].dirty = true;
+
+    auto objectId = buf->itemCount;
+    SetMaterial(buf, objectId, z, color);
+    SetSP(buf, 0, line, objectId, true);
+}
+
+// Switch two horizontal lines
+void SwapScanLines(ScanBuffer* buf, int a, int b) {
+    if (buf == nullptr) return;
+    auto limit = buf->height - 1;
+    if (a < 0 || b < 0 || a > limit || b > limit) return; // invalid range. Note: we keep a spare 'offscreen' buffer line
+
+    ScanLine tmp;
+    tmp.points = buf->scanLines[a].points;
+    tmp.count  = buf->scanLines[a].count;
+    tmp.length = buf->scanLines[a].length;
+
+    buf->scanLines[a].points = buf->scanLines[b].points;
+    buf->scanLines[a].count  = buf->scanLines[b].count;
+    buf->scanLines[a].length = buf->scanLines[b].length;
+    buf->scanLines[a].dirty  = true;
+
+    buf->scanLines[b].points = tmp.points;
+    buf->scanLines[b].count  = tmp.count;
+    buf->scanLines[b].length = tmp.length;
+    buf->scanLines[b].dirty  = true;
+}
+
+void CopyScanBuffer(ScanBuffer *src, ScanBuffer *dst)
+{
+    if (src == nullptr || dst == nullptr) return;
+
+    // object materials
+    auto mc = src->itemCount;
+    for (int i = 0; i < mc; ++i) {
+        dst->materials[i].color = src->materials[i].color;
+        dst->materials[i].depth = src->materials[i].depth;
+    }
+    dst->itemCount = src->itemCount;
+
+    // scanline switch points
+    auto max = src->height;
+    if (dst->height < max) max = dst->height;
+    for (int i = 0; i < max; ++i) {
+        auto c = src->scanLines[i].count;
+        for (int j = 0; j < c; ++j) {
+            dst->scanLines[i].points[j] = src->scanLines[i].points[j];
+        }
+        dst->scanLines[i].count  = src->scanLines[i].count;
+        dst->scanLines[i].length = src->scanLines[i].length;
+        dst->scanLines[i].dirty  = src->scanLines[i].dirty;
+    }
+}
+
 // blend two colors, by a proportion [0..255]
 // 255 is 100% color1; 0 is 100% color2.
-inline uint32_t Blend(uint32_t prop1, uint32_t color1, uint32_t color2) {
+uint32_t Blend(uint32_t prop1, uint32_t color1, uint32_t color2) {
     if (prop1 >= 255) return color1;
     if (prop1 <= 0) return color2;
 
@@ -459,7 +529,7 @@ inline uint32_t Blend(uint32_t prop1, uint32_t color1, uint32_t color2) {
 
     // everything needs shifting 8 bits, we've integrated it into the color merge
     return ((r & 0xff00u) << 8u) + ((g & 0xff00u)) + ((b >> 8u) & 0xffu);
-}*/
+}
 
 // reduce display heap to the minimum by merging with remove heap
 inline void CleanUpHeaps(PriorityQueue p_heap, PriorityQueue r_heap) {
@@ -599,7 +669,7 @@ void RenderScanLine(
 // Render a scan buffer to a pixel framebuffer
 // This can be done on a different processor core from other draw commands to spread the load
 // Do not draw to a scan buffer while it is rendering (switch buffers if you need to)
-void RenderBuffer(
+void RenderScanBufferToFrameBuffer(
     ScanBuffer *buf, // source scan buffer
     BYTE* data       // target frame-buffer (must match scanbuffer dimensions)
 ) {

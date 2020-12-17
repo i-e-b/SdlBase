@@ -14,6 +14,8 @@ const int SCREEN_HEIGHT = 600;
 
 // Ideal frame duration for frame limit, in milliseconds
 #define FRAME_TIME_TARGET 15
+// If defined, data will be copied between the write and render buffers. If you always redraw on every frame, you can undefine this.
+#define COPY_SCAN_BUFFERS 1
 // If set, renderer will try to hit the ideal frame time (by delaying frames, or postponing input events as required)
 // Otherwise, drawing will be as fast as possible, and events are handled every frame
 #define FRAME_LIMIT 1

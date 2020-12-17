@@ -39,7 +39,7 @@ int RenderWorker(void*)
         auto scanBuf = (writeBuffer > 0) ? BufferA : BufferB; // must be opposite way to writing loop
         SDL_UnlockMutex(gDataLock);
 
-        RenderBuffer(scanBuf, base);
+        RenderScanBufferToFrameBuffer(scanBuf, base);
         SDL_UpdateWindowSurface(window);                        // update the surface -- need to do this every frame.
 
         SDL_LockMutex(gDataLock);
@@ -111,7 +111,8 @@ int main()
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     // Draw loop                                                                                      //
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    auto scanBuf = BufferA;
+    auto writingScanBuf = BufferA;
+    auto readingScanBuf = BufferB;
     gState.running = true;
     while (gState.running) {
         uint32_t fst = SDL_GetTicks();
@@ -123,18 +124,23 @@ int main()
             // If render can't keep up with frameWait, we skip this frame and draw to the same buffer.
             SDL_LockMutex(gDataLock);                               // lock
             writeBuffer = 1 - writeBuffer;                          // switch buffer
-            scanBuf = (writeBuffer > 0) ? BufferB : BufferA;        // MUST be opposite way to writing loop
+            writingScanBuf = (writeBuffer > 0) ? BufferB : BufferA;        // MUST be opposite way to writing loop
+            readingScanBuf = (writeBuffer > 0) ? BufferA : BufferB;        // MUST be same way as writing loop
+
+    #ifdef COPY_SCAN_BUFFERS
+            CopyScanBuffer(readingScanBuf, writingScanBuf);
+    #endif
             frameWait = 1;                                          // signal to the other thread that the buffer has changed
             SDL_UnlockMutex(gDataLock);                             // unlock
         }
 #endif
 
         // Pick the write buffer and set switch points:
-        DrawToScanBuffer(scanBuf, frame++, fTime);
+        DrawToScanBuffer(writingScanBuf, frame++, fTime);
 
 #ifndef MULTI_THREAD
         // if not threaded, render immediately
-        RenderBuffer(scanBuf, base);
+        RenderBuffer(writingScanBuf, base);
         SDL_UpdateWindowSurface(window);
 #endif
 

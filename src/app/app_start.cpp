@@ -60,12 +60,12 @@ void DrawToScanBuffer(ScanBuffer *scanBuf, int frame, uint32_t frameTime) {
     ClearScanBuffer(scanBuf); // wipe out switch-point buffer
     SetBackground(scanBuf, 10000, 50, 50, 70);
 
-    MMPush(1 MEGABYTE);
+    MMPush(1 MEGABYTE); // prepare a per-frame bump allocator
 
     drawInfoMessage(scanBuf, frame, frameTime);
     drawMouseHalo(scanBuf);
 
-    MMPop();
+    MMPop(); // wipe out anything we allocated in this frame.
 }
 
 void StartUp() {

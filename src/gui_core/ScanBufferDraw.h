@@ -114,16 +114,33 @@ void EllipseHole(ScanBuffer *buf,
 // Do this *after* rendering to pixel buffer
 void ClearScanBuffer(ScanBuffer *buf);
 
+// blend two colors, by a proportion [0..255]
+// 255 is 100% color1; 0 is 100% color2.
+uint32_t Blend(uint32_t prop1, uint32_t color1, uint32_t color2);
+
 // Render a scan buffer to a pixel framebuffer
 // This can be done on a different processor core from other draw commands to spread the load
 // Do not draw to a scan buffer while it is rendering (switch buffers if you need to)
-void RenderBuffer(
+void RenderScanBufferToFrameBuffer(
     ScanBuffer *buf, // source scan buffer
     BYTE* data       // target frame-buffer (must match ScanBuffer dimensions)
 );
 
+// Copy contents of src to dst, replacing dst.
+// The two scanbuffers should be the same size
+void CopyScanBuffer(ScanBuffer *src, ScanBuffer *dst);
+
 
 // ** Lower-level bits for extending the render engine **
+
+// Switch two horizontal lines
+void SwapScanLines(ScanBuffer* buf, int a, int b);
+
+// Clear a scanline (including background)
+void ResetScanLine(ScanBuffer* buf, int line);
+
+// Clear a scanline, and set a new background color and depth
+void ResetScanLineToColor(ScanBuffer* buf, int line, int z, uint32_t color);
 
 // Set a point with an exact position, clipped to bounds
 inline void SetSP(ScanBuffer * buf, int x, int y, uint16_t objectId, uint8_t isOn);
