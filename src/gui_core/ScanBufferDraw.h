@@ -33,21 +33,26 @@ typedef struct Material {
 
 typedef struct ScanLine {
 	bool dirty;				// set to `true` when the scanline is updated
-    int32_t count;          // number of items in the array
-    int32_t length;         // memory length of the array
+    int32_t count;          // number of items in the array (changes with draw commands)
+    int32_t resetPoint;     // roll-back / undo marker for this line
+    int32_t length;         // memory length of the array (fixed)
 
     SwitchPoint* points;    // When drawing to the buffer, we can just append. Before rendering, this must be sorted by x-pos
 } ScanLine;
 
 // buffer of switch points.
 typedef struct ScanBuffer {
-    uint16_t itemCount;     // used to give each switch-point a unique ID. This is critical for the depth-sorting process
     int height;
     int width;
 
-    ScanLine* scanLines;    // matrix of switch points.
-    Material* materials;    // draw properties for each object
-    void *p_heap, *r_heap;  // internal heaps for depth sorting
+    ScanLine* scanLines;    // matrix of switch points. (height + SPARE_LINES is size)
+
+    // TODO: move materials and the heaps into the scan-lines?
+    uint16_t materialCount; // used to give each object a depth and color. TODO: add textures
+    uint16_t materialReset; //  roll-back / undo marker for the materials list
+    Material* materials;    // draw properties for each object (item count is the max used index, OBJECT_MAX is size)
+
+    void *p_heap, *r_heap;  // internal heaps for depth sorting during rendering
 } ScanBuffer;
 
 ScanBuffer *InitScanBuffer(int width, int height);
@@ -127,8 +132,14 @@ void RenderScanBufferToFrameBuffer(
 );
 
 // Copy contents of src to dst, replacing dst.
-// The two scanbuffers should be the same size
+// The two scan buffers should be the same size
 void CopyScanBuffer(ScanBuffer *src, ScanBuffer *dst);
+
+// Allow us to 'reset' to the drawing to its current state after future drawing commands and renders
+void SetScanBufferResetPoint(ScanBuffer *buf);
+
+// Remove any drawings after the last reset point was set. If none set, all drawings will be removed.
+void ResetScanBuffer(ScanBuffer *buf);
 
 
 // ** Lower-level bits for extending the render engine **

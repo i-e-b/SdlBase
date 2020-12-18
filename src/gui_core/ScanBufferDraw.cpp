@@ -12,6 +12,7 @@ using namespace std;
 #define OFF 0x00
 
 #define OBJECT_MAX 65535
+#define SPARE_LINES 2
 
 // NOTES:
 
@@ -35,15 +36,18 @@ ScanBuffer * InitScanBuffer(int width, int height)
     buf->materials = (Material*)calloc(OBJECT_MAX + 1, sizeof(Material));
     if (buf->materials == nullptr) { FreeScanBuffer(buf); return nullptr; }
 
-    buf->scanLines = (ScanLine*)calloc(height+1, sizeof(ScanLine)); // we use a spare line as sorting temp memory
+    buf->scanLines = (ScanLine*)calloc(height+SPARE_LINES, sizeof(ScanLine)); // we use a spare pairs of lines as sorting temp memory
     if (buf->scanLines == nullptr) { FreeScanBuffer(buf); return nullptr; }
 
-    for (int i = 0; i < height + 1; i++) {
+    for (int i = 0; i < height + SPARE_LINES; i++) {
         auto scanBuf = (SwitchPoint*)calloc(sizeEstimate + 1, sizeof(SwitchPoint));
         if (scanBuf == nullptr) { FreeScanBuffer(buf); return nullptr; }
         buf->scanLines[i].points = scanBuf;
-        buf->scanLines[i].count = 0;
         buf->scanLines[i].length = sizeEstimate;
+
+        buf->scanLines[i].count = 0;
+        buf->scanLines[i].resetPoint = 0;
+        buf->scanLines[i].dirty = true;
     }
 
     buf->p_heap = HeapInit(OBJECT_MAX);
@@ -58,7 +62,9 @@ ScanBuffer * InitScanBuffer(int width, int height)
         return nullptr;
     }
 
-    buf->itemCount = 0;
+    buf->materialCount = 0;
+    buf->materialReset = 0;
+
     buf->height = height;
     buf->width = width;
 
@@ -69,7 +75,7 @@ void FreeScanBuffer(ScanBuffer * buf)
 {
     if (buf == nullptr) return;
     if (buf->scanLines != nullptr) {
-        for (int i = 0; i < buf->height; i++) {
+        for (int i = 0; i < buf->height + SPARE_LINES; i++) {
             if (buf->scanLines[i].points != nullptr) free(buf->scanLines[i].points);
         }
         free(buf->scanLines);
@@ -138,7 +144,7 @@ void SetLine(
     int bottom = (y1 > h) ? h : y1;
     float grad = (float)(x0 - x1) / (float)(y0 - y1);
 
-    auto objectId = buf->itemCount;
+    auto objectId = buf->materialCount;
     SetMaterial(buf, objectId, z, color);
 
     for (int y = top; y < bottom; y++) // skip the last pixel to stop double-counting
@@ -176,7 +182,7 @@ void FillRect(ScanBuffer *buf,
     if (z < 0) return; // behind camera
     GeneralRect(buf, left, top, right, bottom, z, r, g, b);
 
-    buf->itemCount++;
+    buf->materialCount++;
 }
 
 void FillCircle(ScanBuffer *buf,
@@ -205,9 +211,8 @@ void GeneralEllipse(ScanBuffer *buf,
     int fa2 = 4 * a2, fb2 = 4 * b2;
     int x, y, ty, sigma;
     
-    auto objectId = buf->itemCount;
+    auto objectId = buf->materialCount;
     SetMaterial(buf, objectId, z, color);
-    //int grad = 15; // TODO: calculate (could be based on distance from centre line)
 
     // Top and bottom (need to ensure we don't double the scanlines)
     for (x = 0, y = height, sigma = 2 * b2 + a2 * (1 - 2 * height); b2*x <= a2 * y; x++) {
@@ -258,7 +263,7 @@ void FillEllipse(ScanBuffer *buf,
         z, true,
         r, g, b);
 
-    buf->itemCount++;
+    buf->materialCount++;
 }
 
 void EllipseHole(ScanBuffer *buf,
@@ -277,7 +282,7 @@ void EllipseHole(ScanBuffer *buf,
         z, false,
         r, g, b);
 
-    buf->itemCount++;
+    buf->materialCount++;
 }
 
 // Fill a quad given 3 points
@@ -309,7 +314,7 @@ void FillTriQuad(ScanBuffer *buf,
     SetLine(buf, x2 + dx1, y2 + dy1, x2, y2, z, r, g, b);
     SetLine(buf, x2, y2, x0, y0, z, r, g, b);
 
-    buf->itemCount++;
+    buf->materialCount++;
 }
 
 float isqrt(float number) {
@@ -373,7 +378,7 @@ void OutlineEllipse(ScanBuffer * buf, int xc, int yc, int width, int height, int
         xc, yc, width - w1, height - w1,
         z, false, r, g, b);
 
-    buf->itemCount++;
+    buf->materialCount++;
 }
 
 // Fill a triangle with a solid colour
@@ -409,7 +414,7 @@ void FillTriangle(
         SetLine(buf, x1, y1, x0, y0, z, r, g, b);
     }
 
-    buf->itemCount++;
+    buf->materialCount++;
 }
 
 // Set a single 'on' point at the given level on each scan line
@@ -424,7 +429,7 @@ void SetBackground(
         0, 0,
         z, r, g, b);
 
-    buf->itemCount++;
+    buf->materialCount++;
 }
 
 // Reset all drawing operations in the buffer, ready for next frame
@@ -432,10 +437,12 @@ void SetBackground(
 void ClearScanBuffer(ScanBuffer * buf)
 {
     if (buf == nullptr) return;
-    buf->itemCount = 0; // reset object ids
+    buf->materialCount = 0; // reset object ids
+    buf->materialReset = 0; // reset object ids
     for (int i = 0; i < buf->height; i++)
     {
         buf->scanLines[i].count = 0;
+        buf->scanLines[i].resetPoint = 0;
         buf->scanLines[i].dirty = true;
     }
 }
@@ -447,6 +454,7 @@ void ResetScanLine(ScanBuffer* buf, int line)
     if (line < 0 || line >= buf->height) return;
 
     buf->scanLines[line].count = 0;
+    buf->scanLines[line].resetPoint = 0;
     buf->scanLines[line].dirty = true;
 }
 
@@ -457,9 +465,10 @@ void ResetScanLineToColor(ScanBuffer* buf, int line, int z, uint32_t color)
     if (line < 0 || line >= buf->height) return;
 
     buf->scanLines[line].count = 0;
+    buf->scanLines[line].resetPoint = 0;
     buf->scanLines[line].dirty = true;
 
-    auto objectId = buf->itemCount;
+    auto objectId = buf->materialCount;
     SetMaterial(buf, objectId, z, color);
     SetSP(buf, 0, line, objectId, true);
 }
@@ -471,19 +480,22 @@ void SwapScanLines(ScanBuffer* buf, int a, int b) {
     if (a < 0 || b < 0 || a > limit || b > limit) return; // invalid range. Note: we keep a spare 'offscreen' buffer line
 
     ScanLine tmp;
-    tmp.points = buf->scanLines[a].points;
-    tmp.count  = buf->scanLines[a].count;
-    tmp.length = buf->scanLines[a].length;
+    tmp.points     = buf->scanLines[a].points;
+    tmp.count      = buf->scanLines[a].count;
+    tmp.resetPoint = buf->scanLines[a].resetPoint;
+    tmp.length     = buf->scanLines[a].length;
 
-    buf->scanLines[a].points = buf->scanLines[b].points;
-    buf->scanLines[a].count  = buf->scanLines[b].count;
-    buf->scanLines[a].length = buf->scanLines[b].length;
-    buf->scanLines[a].dirty  = true;
+    buf->scanLines[a].points     = buf->scanLines[b].points;
+    buf->scanLines[a].count      = buf->scanLines[b].count;
+    buf->scanLines[a].resetPoint = buf->scanLines[b].resetPoint;
+    buf->scanLines[a].length     = buf->scanLines[b].length;
+    buf->scanLines[a].dirty      = true;
 
-    buf->scanLines[b].points = tmp.points;
-    buf->scanLines[b].count  = tmp.count;
-    buf->scanLines[b].length = tmp.length;
-    buf->scanLines[b].dirty  = true;
+    buf->scanLines[b].points     = tmp.points;
+    buf->scanLines[b].count      = tmp.count;
+    buf->scanLines[b].resetPoint = tmp.resetPoint;
+    buf->scanLines[b].length     = tmp.length;
+    buf->scanLines[b].dirty      = true;
 }
 
 void CopyScanBuffer(ScanBuffer *src, ScanBuffer *dst)
@@ -491,12 +503,13 @@ void CopyScanBuffer(ScanBuffer *src, ScanBuffer *dst)
     if (src == nullptr || dst == nullptr) return;
 
     // object materials
-    auto mc = src->itemCount;
+    auto mc = src->materialCount;
     for (int i = 0; i < mc; ++i) {
         dst->materials[i].color = src->materials[i].color;
         dst->materials[i].depth = src->materials[i].depth;
     }
-    dst->itemCount = src->itemCount;
+    dst->materialCount = src->materialCount;
+    dst->materialReset = src->materialReset;
 
     // scanline switch points
     auto max = src->height;
@@ -506,11 +519,35 @@ void CopyScanBuffer(ScanBuffer *src, ScanBuffer *dst)
         for (int j = 0; j < c; ++j) {
             dst->scanLines[i].points[j] = src->scanLines[i].points[j];
         }
-        dst->scanLines[i].count  = src->scanLines[i].count;
-        dst->scanLines[i].length = src->scanLines[i].length;
-        dst->scanLines[i].dirty  = src->scanLines[i].dirty;
+        dst->scanLines[i].count      = src->scanLines[i].count;
+        dst->scanLines[i].resetPoint = src->scanLines[i].resetPoint;
+        dst->scanLines[i].length     = src->scanLines[i].length;
+        dst->scanLines[i].dirty      = src->scanLines[i].dirty;
     }
 }
+
+
+// Allow us to 'reset' to the drawing to its current state after future drawing commands and renders
+void SetScanBufferResetPoint(ScanBuffer *buf) {
+    if (buf == nullptr) return;
+    buf->materialReset = buf->materialCount;
+    for (int i = 0; i < buf->height; i++)
+    {
+        buf->scanLines[i].resetPoint = buf->scanLines[i].count;
+    }
+}
+
+// Remove any drawings after the last reset point was set. If none set, all drawings will be removed.
+void ResetScanBuffer(ScanBuffer *buf){
+    if (buf == nullptr) return;
+    buf->materialCount = buf->materialReset;
+    for (int i = 0; i < buf->height; i++)
+    {
+        buf->scanLines[i].count = buf->scanLines[i].resetPoint;
+        buf->scanLines[i].dirty = true;
+    }
+}
+
 
 // blend two colors, by a proportion [0..255]
 // 255 is 100% color1; 0 is 100% color2.
@@ -560,6 +597,7 @@ inline void CleanUpHeaps(PriorityQueue p_heap, PriorityQueue r_heap) {
     }
 }
 
+// The core rendering algorithm. This is done for each scanline.
 void RenderScanLine(
     ScanBuffer *buf,             // source scan buffer
     int lineIndex,               // index of the line we're drawing
@@ -569,19 +607,26 @@ void RenderScanLine(
 	if (!scanLine->dirty) return;
 	scanLine->dirty = false;
 
-    auto tmpLine = &(buf->scanLines[buf->height]);
+    auto tmpLine1 = &(buf->scanLines[buf->height]);
+    auto tmpLine2 = &(buf->scanLines[buf->height+1]);
 
     int yoff = buf->width * lineIndex;
     auto materials = buf->materials;
     auto count = scanLine->count;
-    //auto width = buf->width;
+
+    // Copy switch points to the scratch space. This allows for our push/pop graphics storage.
+    /*auto dst = tmpLine1->points;
+    auto src = scanLine->points;
+    for (int i = 0; i < count; ++i) { *(dst++) = *(src++); }*/
+    for (int i = 0; i < count; ++i) {
+        tmpLine1->points[i] = scanLine->points[i];
+    }
 
     // Note: sorting takes a lot of the time up. Anything we can do to improve it will help frame rates
-    auto list = IterativeMergeSort(scanLine->points, tmpLine->points, count);
-    //auto list = QuickSort(scanLine->points, tmpLine->points, count);
-    //auto list = RadixSort(scanLine->points, tmpLine->points, count);
+    // Note: we use a single pair of 'spare' lines for sorting. If this rendering gets multi-threaded,
+    //       you'll need to add scratch space per thread.
+    auto list = IterativeMergeSort(tmpLine1->points, tmpLine2->points, count);
 
-    
     auto p_heap = (PriorityQueue)buf->p_heap;   // presentation heap
     auto r_heap = (PriorityQueue)buf->r_heap;   // removal heap
     
@@ -606,6 +651,7 @@ void RenderScanLine(
                 auto max = (sw.xPos > end) ? end : sw.xPos;
                 auto d = (uint32_t*)(data + ((p+yoff) * sizeof(uint32_t)));
                 for (; p < max; p++) {
+                    // TODO: more materials here (textures at least)
                     // -- 'fade rate'
                     //if (current.fade < 15) current.fade++;
 

@@ -25,11 +25,8 @@ void writeString(ScanBuffer *scanBuf, String *line, int x, int y, int z, uint32_
 }
 
 void drawInfoMessage(ScanBuffer *scanBuf, int frame, uint32_t frameTime) {
-    auto line = StringNew("Welcome to the sdl program base! Press any key to stop. Close window to exit");
-    writeString(scanBuf, line, 16, 30, 1, 0xffffff);
-
     if (frameTime < 1) frameTime = 1;
-    StringAppendFormat(line, "Frame rate:  \x02; Frame count: \x02.", 1000 / frameTime, frame);
+    auto line = StringNewFormat("Frame rate:  \x02; Frame count: \x02.", 1000 / frameTime, frame);
     writeString(scanBuf, line, 16, 40, 10, 0x7755ff);
 
     size_t allocBytes, freeBytes, largestBlock;
@@ -57,13 +54,24 @@ void drawMouseHalo(ScanBuffer *scanBuf){
 }
 
 void DrawToScanBuffer(ScanBuffer *scanBuf, int frame, uint32_t frameTime) {
-    ClearScanBuffer(scanBuf); // wipe out switch-point buffer
-    SetBackground(scanBuf, 10000, 50, 50, 70);
-
     MMPush(1 MEGABYTE); // prepare a per-frame bump allocator
 
-    drawInfoMessage(scanBuf, frame, frameTime);
-    drawMouseHalo(scanBuf);
+    if (frame < 1) {
+        ClearScanBuffer(scanBuf); // wipe out switch-point buffer
+        SetBackground(scanBuf, 10000, 50, 50, 70);
+
+        auto line = StringNew("Welcome to the sdl program base! Press any key to stop. Close window to exit");
+        writeString(scanBuf, line, 16, 30, 1, 0xffffff);
+
+        SetScanBufferResetPoint(scanBuf); // Allow us to 'reset' to the drawing to here
+                                          // TODO: later, allow push/pop?
+    }
+    else {
+        ResetScanBuffer(scanBuf); // 'undo' any changes after the last reset point
+
+        drawInfoMessage(scanBuf, frame, frameTime);
+        drawMouseHalo(scanBuf);
+    }
 
     MMPop(); // wipe out anything we allocated in this frame.
 }
