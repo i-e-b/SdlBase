@@ -8,8 +8,8 @@
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 using namespace std;
 
-#define ON 0x01
-#define OFF 0x00
+#define ON 0x01u
+#define OFF 0x00u
 
 #define OBJECT_MAX 65535
 #define SPARE_LINES 2
@@ -20,7 +20,7 @@ using namespace std;
 //              There should be no matching 'OFF'.
 //              In areas where there is no fill present, no change to the existing image is made.
 
-// Holes: A CCW winding polygon will have 'OFF's before 'ON's, being inside-out. If a single 'ON' is set before this shape
+// Holes: A CCW winding polygon will have OFFs before ONs, being inside-out. If a single 'ON' is set before this shape
 //        (Same as a background) then we will fill only where the polygon is *not* present -- this makes vignette effects simple
 
 ScanBuffer * InitScanBuffer(int width, int height)
@@ -321,7 +321,7 @@ float isqrt(float number) {
 	unsigned long i;
 	float x2, y;
 	int j;
-	const float threehalfs = 1.5F;
+	const float threeHalfs = 1.5F;
 
 	x2 = number * 0.5F;
 	y = number;
@@ -329,7 +329,7 @@ float isqrt(float number) {
 	i = 0x5f3759df - (i >> 1u);
 	y = *(float*)&i;
 	j = 3;
-	while (j--) {	y = y * (threehalfs - (x2 * y * y)); }
+	while (j--) {	y = y * (threeHalfs - (x2 * y * y)); }
 
 	return y;
 }
@@ -340,7 +340,7 @@ void DrawLine(ScanBuffer * buf, int x0, int y0, int x1, int y1, int z, int w, in
 
     // TODO: special case for w < 2
 
-    // Use triquad and the gradient's normal to draw
+    // Use tri-quad and the gradient's normal to draw
     auto ndy = (float)(   x1 - x0  );
     auto ndx = (float)( -(y1 - y0) );
 
@@ -610,7 +610,7 @@ void RenderScanLine(
     auto tmpLine1 = &(buf->scanLines[buf->height]);
     auto tmpLine2 = &(buf->scanLines[buf->height+1]);
 
-    int yoff = buf->width * lineIndex;
+    int yOff = buf->width * lineIndex;
     auto materials = buf->materials;
     auto count = scanLine->count;
 
@@ -649,7 +649,7 @@ void RenderScanLine(
         if (sw.xPos > p) { // render up to this switch point
             if (on) {
                 auto max = (sw.xPos > end) ? end : sw.xPos;
-                auto d = (uint32_t*)(data + ((p+yoff) * sizeof(uint32_t)));
+                auto d = (uint32_t*)(data + ((p + yOff) * sizeof(uint32_t)));
                 for (; p < max; p++) {
                     // TODO: more materials here (textures at least)
                     // -- 'fade rate'
@@ -697,7 +697,7 @@ void RenderScanLine(
 
 #if 0
         // DEBUG: show switch point in black
-        int pixoff = ((yoff + sw.xPos - 1) * 4);
+        int pixoff = ((yOff + sw.xPos - 1) * 4);
         if (pixoff > 0) { data[pixoff + 0] = data[pixoff + 1] = data[pixoff + 2] = 0; }
         // END
 #endif
@@ -706,7 +706,7 @@ void RenderScanLine(
     
     if (on) { // fill to end of data
         for (; p < end; p++) {
-            ((uint32_t*)data)[p + yoff] = color;
+            ((uint32_t*)data)[p + yOff] = color;
         }
     }
     

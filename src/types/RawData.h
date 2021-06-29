@@ -76,17 +76,37 @@ inline void writeValue(void *ptr, size_t byteOffset, void* data, int length) {
         *(dst++) = *(src++);
     }
 }
-inline void copyAnonArray(void *dstPtr, int dstIndex, void* srcPtr, int srcIndex, int length) {
+inline void writeValue(void *ptr, size_t byteOffset, void* data, uint32_t length) {
+    char* dst = (char*)ptr;
+    dst += byteOffset;
+    char* src = (char*)data;
+
+    for (uint32_t i = 0; i < length; i++) {
+        *(dst++) = *(src++);
+    }
+}
+inline void copyAnonArray(void *dstPtr, int dstIndex, void* srcPtr, int srcIndex, size_t length) {
     char* dst = (char*)dstPtr;
     dst += dstIndex * length;
     char* src = (char*)srcPtr;
     src += srcIndex * length;
 
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         *(dst++) = *(src++);
     }
 }
 inline void swapMem(void * const a, void * const b, int n) {
+    auto* p = (unsigned char*)a;
+    auto* q = (unsigned char*)b;
+    unsigned char* const sentry = (unsigned char*)a + n;
+
+    for (; p < sentry; ++p, ++q) {
+        const unsigned char t = *p;
+        *p = *q;
+        *q = t;
+    }
+}
+inline void swapMem(void * const a, void * const b, uint32_t n) {
     auto* p = (unsigned char*)a;
     auto* q = (unsigned char*)b;
     unsigned char* const sentry = (unsigned char*)a + n;

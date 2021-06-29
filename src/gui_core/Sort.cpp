@@ -1,10 +1,10 @@
 #include "Sort.h"
 
 // minimal sort
-inline bool cmp(SwitchPoint* a, int idx1, int idx2) {
+inline bool cmp(SwitchPoint* a, unsigned int idx1, unsigned int idx2) {
     // sort by position, with `on` to the left of `off`
-    auto p1 = (a[idx1].xPos << 1u) + a[idx1].state;
-    auto p2 = (a[idx2].xPos << 1u) + a[idx2].state;
+    auto p1 = ((uint32_t)(a[idx1].xPos) << 1u) + (uint32_t)(a[idx1].state);
+    auto p2 = ((uint32_t)(a[idx2].xPos) << 1u) + (uint32_t)(a[idx2].state);
     return (p1 < p2);
 }
 

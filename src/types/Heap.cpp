@@ -50,8 +50,8 @@ void HeapClear(Heap * H) {
     ArenaDereference(arena, temp);
 }
 
-inline int ElementPriority(Heap *H, int index) {
-    return readInt(VectorGet(H->Elements, index));
+inline int ElementPriority(Heap *H, uint32_t index) {
+    return readInt(VectorGet(H->Elements, (int)index));
 }
 
 void HeapInsert(Heap * H, int priority, void * element) {
@@ -70,12 +70,12 @@ void HeapInsert(Heap * H, int priority, void * element) {
     // Percolate down to make room for the new element
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "LoopDoesntUseConditionVariableInspection"
-    for (i = size - 1; ElementPriority(H, i >> 1) > priority; i >>= 1) {
+    for (i = size - 1; ElementPriority(H, (int)(i >> 1)) > priority; i >>= 1) {
         VectorSwap(H->Elements, i, i >> 1); //H->Elements[i] = H->Elements[i >> 1];
     }
 #pragma clang diagnostic pop
 
-    VectorSet(H->Elements, i, temp, nullptr);
+    VectorSet(H->Elements, (int)i, temp, nullptr);
     ArenaDereference(arena, temp);
 }
 
@@ -124,7 +124,7 @@ bool HeapDeleteMin(Heap * H, void* element) {
         else break;
     }
 
-    VectorSet(H->Elements, i, LastElement, nullptr);
+    VectorSet(H->Elements, (int)i, LastElement, nullptr);
     return MinElement;
 }
 

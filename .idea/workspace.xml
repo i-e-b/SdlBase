@@ -3,6 +3,9 @@
   <component name="AnalysisUIOptions">
     <option name="SCOPE_TYPE" value="3" />
   </component>
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
     <generated>
       <config projectName="SdlBase" targetName="SdlBase" />
@@ -14,7 +17,29 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="67086357-fdaa-43bf-8e6a-529e12dac243" name="Default Changelist" comment="" />
+    <list default="true" id="67086357-fdaa-43bf-8e6a-529e12dac243" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/dictionaries/iain_ballard.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/SdlBase.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/SdlBase.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui_core/BinHeap.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui_core/BinHeap.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui_core/Sort.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui_core/Sort.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/ArenaAllocator.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/ArenaAllocator.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/HashMap.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/HashMap.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/HashMap.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/HashMap.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/Heap.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/Heap.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/Heap.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/Heap.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/MathBits.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/MathBits.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/MemoryManager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/MemoryManager.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/RawData.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/RawData.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/String.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/String.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/Vector.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/Vector.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/Vector.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/Vector.h" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -25,6 +50,9 @@
     <option name="clangWarnings" value="-Wno-unused-variable,-Wno-infinite-recursion,-Werror=implicit-function-declaration,-Wshadow,-Wno-shadow-field-in-constructor-modified,-Wno-shadow-ivar,-Wuninitialized,-Wunused-label,-Wunused-lambda-capture,-Wno-unknown-pragmas" />
   </component>
   <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="zulw3ug7" />
   </component>
@@ -36,9 +64,15 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="RunOnceActivity.cidr.known.project.marker" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="cf.first.check.clang-format" value="false" />
+    <property name="cidr.known.project.marker" value="true" />
+    <property name="cmake.loaded.for.project" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+    <property name="settings.editor.splitter.proportion" value="0.2437673" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
@@ -46,14 +80,14 @@
     </key>
   </component>
   <component name="RunManager">
-    <configuration name="SdlBase" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SdlBase" TARGET_NAME="SdlBase" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="SdlBase" RUN_TARGET_NAME="SdlBase">
+    <configuration name="SdlBase" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SdlBase" TARGET_NAME="SdlBase" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="SdlBase" RUN_TARGET_NAME="SdlBase">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" PASS_PARENT_ENVS_2="true">
+    <configuration default="true" type="GradleAppRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+        <option name="com.jetbrains.cidr.cpp.gradle.execution.GradleNativeBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
   </component>
@@ -71,10 +105,27 @@
       <workItem from="1608127464162" duration="1168000" />
       <workItem from="1608197045257" duration="13598000" />
       <workItem from="1608298071212" duration="2460000" />
+      <workItem from="1620993783076" duration="420000" />
+      <workItem from="1620994221643" duration="58000" />
+      <workItem from="1623240851926" duration="106000" />
+      <workItem from="1623833649390" duration="46000" />
+      <workItem from="1624958412179" duration="214000" />
+      <workItem from="1624958646920" duration="4553000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
 </project>

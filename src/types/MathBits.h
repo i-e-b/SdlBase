@@ -32,7 +32,7 @@ uint32_t random_at_most(uint32_t max) {
             num_rand = (unsigned long)RAND_MAX + 1,
             bin_size = num_rand / num_bins,
             defect = num_rand % num_bins;
-    int x;
+    uint32_t x;
     do { x = triple32(nullptr); }
     while (num_rand - defect <= (unsigned long)x); // This is carefully written not to overflow
 
@@ -59,7 +59,7 @@ uint32_t random_at_most(uint32_t seedStep, uint32_t max) {
 int32_t ranged_random(uint32_t seedStep, int32_t min, int32_t max) {
     uint32_t range = max - min;
     uint32_t v = random_at_most(seedStep, range);
-    return v;
+    return ((int32_t)v) + min;
 }
 
 uint32_t int_random(uint32_t seedStep) {
@@ -67,7 +67,7 @@ uint32_t int_random(uint32_t seedStep) {
 }
 
 float float_random(uint32_t seedStep) {
-    float b = (float)triple32(&seedStep);
+    auto b = (float)triple32(&seedStep);
     return b / ((float)RAND_MAX);
 }
 

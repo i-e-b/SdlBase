@@ -5,7 +5,7 @@
 // This type is used for the ScanBuffer drawing SwitchPoint list
 typedef struct ElementType {
     int depth;      // the 'priority' of our element. Should be greater than zero
-    int identifier; // a unique identifier for the element (Note: internally, this is used as a 2ndary priority to add sort stability)
+    int identifier; // a unique identifier for the element (Note: internally, this is used as a secondary priority to add sort stability)
     int lookup;     // any extra information needed. Does not need to be unique.
 } ElementType;
 

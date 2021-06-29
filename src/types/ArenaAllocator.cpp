@@ -120,7 +120,7 @@ void* MakePermanent(void* data, size_t length) {
 
     copyAnonArray(perm, 0, data, 0, length);
 
-    return nullptr;
+    return perm;
 }
 
 // Copy data from one arena to another. Use this for return values
@@ -134,7 +134,7 @@ void* CopyToArena(void* srcData, size_t length, Arena* target) {
 
     copyAnonArray(dstData, 0, srcData, 0, length);
 
-    return nullptr;
+    return dstData;
 }
 
 

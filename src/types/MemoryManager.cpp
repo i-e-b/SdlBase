@@ -46,7 +46,10 @@ void ShutdownManagedMemory() {
 // Start a new arena, keeping memory and state of any existing ones
 bool MMPush(size_t arenaMemory) {
     if (MEMORY_STACK == nullptr) return false;
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "LoopDoesntUseConditionVariableInspection"
     while (LOCK != 0) {}
+#pragma clang diagnostic pop
     LOCK = 1;
 
     auto* vec = (Vector*)MEMORY_STACK;
@@ -64,7 +67,10 @@ bool MMPush(size_t arenaMemory) {
 // Deallocate the most recent arena, restoring the previous
 void MMPop() {
     if (MEMORY_STACK == nullptr) return;
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "LoopDoesntUseConditionVariableInspection"
     while (LOCK != 0) {}
+#pragma clang diagnostic pop
     LOCK = 1;
 
     auto* vec = (Vector*)MEMORY_STACK;
@@ -79,7 +85,10 @@ void MMPop() {
 // Deallocate the most recent arena, copying a data item to the next one down (or permanent memory if at the bottom of the stack)
 void* MMPopReturn(void* ptr, size_t size) {
     if (MEMORY_STACK == nullptr) return nullptr;
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "LoopDoesntUseConditionVariableInspection"
     while (LOCK != 0) {}
+#pragma clang diagnostic pop
     LOCK = 1;
 
     void* result;
@@ -104,7 +113,10 @@ void* MMPopReturn(void* ptr, size_t size) {
 // TODO: if nothing pushed, push a new small arena
 Arena* MMCurrent() {
     if (MEMORY_STACK == nullptr) return nullptr;
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "LoopDoesntUseConditionVariableInspection"
     while (LOCK != 0) {}
+#pragma clang diagnostic pop
     LOCK = 1;
 
     auto* vec = (Vector*)MEMORY_STACK;
@@ -142,7 +154,10 @@ void mfree(void* ptr) {
     // otherwise, scan through all the arenas until we find it
     // it might be simpler to leak the memory and let the arena get cleaned up whenever
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "LoopDoesntUseConditionVariableInspection"
     while (LOCK != 0) {}
+#pragma clang diagnostic pop
     LOCK = 1;
 
     auto* vec = (Vector*)MEMORY_STACK;

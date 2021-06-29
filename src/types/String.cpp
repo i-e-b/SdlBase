@@ -198,7 +198,7 @@ void StringAppendDouble(String *str, double value) {
     auto intPart = (uint32_t)uValue;
     auto fracPart = (uint32_t)((uValue - intPart) * 100000);
 
-    StringAppendInt32(str, intPart);
+    StringAppendInt32(str, (int)intPart);
     VPush_char(str->chars, '.');
 
     int64_t digit;
@@ -366,11 +366,11 @@ String *StringSlice(String* str, int startIdx, int length) {
 	if (arena == nullptr) return nullptr;
 
     String *result = StringEmptyInArena(arena);
-    while (startIdx < 0) { startIdx += len; }
-    if (length < 0) { length += len; length -= startIdx - 1; }
+    while (startIdx < 0) { startIdx += (int)len; }
+    if (length < 0) { length += (int)len; length -= startIdx - 1; }
 
     for (int i = 0; i < length; i++) {
-        uint32_t x = (i + startIdx) % len;
+        auto x = (int)((i + startIdx) % len);
         if (!VPush_char(result->chars, *VGet_char(str->chars, x))) {
             // out of memory?
             StringDeallocate(result);
@@ -399,16 +399,16 @@ char *StringToCStr(String *str, Arena* a) {
 }
 
 char *SubstringToCStr(String *str, int start, Arena* a) {
-    auto len = StringLength(str);
+    auto len = (int)StringLength(str);
     if (start < 0) { // from end
         start += len;
     }
-    auto s = (uint32_t)start;
+    auto s = start;
     if (len > s) { len -= s; }
     if (a == nullptr) a = MMCurrent();
 
     auto result = (char*)ArenaAllocate(a, 1 + (sizeof(char) * len)); // need extra byte for '\0'
-    for (unsigned int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++) {
         char *cp = VGet_char(str->chars, (char)(i + s));
         if (cp == nullptr) {
             break;
@@ -431,7 +431,7 @@ uint32_t StringHash(String* str) {
     uint32_t len = StringLength(str);
     uint32_t hash = len;
     for (uint32_t i = 0; i < len; i++) {
-        hash += *VGet_char(str->chars, i);
+        hash += *VGet_char(str->chars, (int)i);
         hash ^= hash >> 16;
         hash *= 0x7feb352d;
         hash ^= hash >> 15;
@@ -457,7 +457,7 @@ void StringToLower(String *str) {
     // Simple 7-bit ASCII only at present
     uint32_t len = VLength(str->chars);
     for (uint32_t i = 0; i < len; i++) {
-        auto chr = VGet_char(str->chars, i);
+        auto chr = VGet_char(str->chars, (int)i);
         if (*chr >= 'A' && *chr <= 'Z') {
             *chr = (char)(*chr + 0x20);
         }
@@ -470,7 +470,7 @@ void StringToUpper(String *str) {
     // Simple 7-bit ASCII only at present
     uint32_t len = VLength(str->chars);
     for (uint32_t i = 0; i < len; i++) {
-        auto chr = VGet_char(str->chars, i);
+        auto chr = VGet_char(str->chars, (int)i);
         if (*chr >= 'a' && *chr <= 'z') {
             *chr = (char)(*chr - 0x20);
         }
@@ -483,8 +483,8 @@ bool StringStartsWith(String* haystack, String *needle) {
     auto len = StringLength(needle);
     if (len > StringLength(haystack)) return false;
     for (uint32_t i = 0; i < len; i++) {
-        auto a = VGet_char(haystack->chars, i);
-        auto b = VGet_char(needle->chars, i);
+        auto a = VGet_char(haystack->chars, (int)i);
+        auto b = VGet_char(needle->chars, (int)i);
         if (*a != *b) return false;
     }
     return true;
@@ -496,7 +496,7 @@ bool StringStartsWith(String* haystack, const char* needle) {
     uint32_t i = 0;
     while (needle[i] != 0) {
         if (i >= limit) return false;
-        auto chr = VGet_char(haystack->chars, i);
+        auto chr = VGet_char(haystack->chars, (int)i);
         if (*chr != needle[i]) return false;
         i++;
     }
@@ -513,7 +513,7 @@ bool StringEndsWith(String* haystack, String *needle) {
     off -= len;
     for (uint32_t i = 0; i < len; i++) {
         auto a = VGet_char(haystack->chars, (char)(i + off));
-        auto b = VGet_char(needle->chars, i);
+        auto b = VGet_char(needle->chars, (int)i);
         if (*a != *b) return false;
     }
     return true;
@@ -531,8 +531,8 @@ bool StringAreEqual(String* a, String* b) {
     uint32_t len = StringLength(a);
     if (len != StringLength(b)) return false;
     for (uint32_t i = 0; i < len; i++) {
-        auto ca = VGet_char(a->chars, i);
-        auto cb = VGet_char(b->chars, i);
+        auto ca = VGet_char(a->chars, (int)i);
+        auto cb = VGet_char(b->chars, (int)i);
         if (*ca != *cb) return false;
     }
     return true;
@@ -544,7 +544,7 @@ bool StringAreEqual(String* a, const char* b) {
     uint32_t i = 0;
     while (b[i] != 0) {
         if (i >= limit) return false;
-        auto chr = VGet_char(a->chars, i);
+        auto chr = VGet_char(a->chars, (int)i);
         if (*chr != b[i]) return false;
         i++;
     }
@@ -639,7 +639,7 @@ bool StringFind(String* haystack, char needle, unsigned int start, unsigned int*
     if (hayLen < start) return false;
 
     for (auto i = start; i < hayLen; i++) {
-        char c = StringCharAtIndex(haystack, i);
+        char c = StringCharAtIndex(haystack, (int)i);
         if (c == needle) {
             if (outPosition != nullptr) *outPosition = i;
             return true;
@@ -679,7 +679,7 @@ String* StringReplace(String* haystack, String* needle, String* replacement) {
     
     while (found) {
         // replacements
-        StringAppendSubstr(result, haystack, tail, (int)(next - tail));
+        StringAppendSubstr(result, haystack, (int)tail, (int)(next - tail));
         StringAppend(result, replacement);
 
         // next one
@@ -692,7 +692,7 @@ String* StringReplace(String* haystack, String* needle, String* replacement) {
 
     // final tail
     if (tail < length) {
-        StringAppendSubstr(result, haystack, tail, -1);
+        StringAppendSubstr(result, haystack, (int)tail, -1);
     }
 
     return result;
@@ -717,7 +717,7 @@ bool StringTryParse_int32(String *str, int32_t *dest) {
     }
 
     for (; i < len; i++) {
-        char c = StringCharAtIndex(str, i);
+        char c = StringCharAtIndex(str, (int)i);
         if (c == '_') continue; // allow (and ignore) underscores. Like 1_000_000
 
         int d = c - '0';
@@ -756,7 +756,7 @@ bool StringTryParse_double(String *str, double *dest) {
 
     // Integer and fraction
     if (point > 0) { // has integer part
-        auto intp = StringSlice(str, 0, point);
+        auto intp = StringSlice(str, 0, (int)point);
         bool ok = StringTryParse_int32(intp, &intPart);
         StringDeallocate(intp);
 

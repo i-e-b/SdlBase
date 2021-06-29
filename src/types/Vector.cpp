@@ -226,7 +226,7 @@ inline void RebuildSkipTable(Vector *v)
     auto stride = v->_elementCount / entries;
     if (stride < 1) stride = 1;
 
-    long target = 0;
+    auto target = 0ul;
     auto newSkipEntries = 0;
     bool found;
     void *chunkPtr;
@@ -683,7 +683,7 @@ bool VectorSwap(Vector *v, unsigned int index1, unsigned int index2) {
     var tmp = VecAlloc(v, bytes);
     if (tmp == nullptr) return false;
 
-    VectorSwapInternal(v, index1, index2, tmp, bytes);
+    VectorSwapInternal(v, index1, index2, tmp, (int)bytes);
 
     VecFree(v, tmp);
 
@@ -702,7 +702,7 @@ bool VectorReverse(Vector *v) {
     auto halfLength = end / 2;
     for (uint32_t i = 0; i < halfLength; i++) {
         end--;
-        VectorSwapInternal(v, i, end, tmp, bytes);
+        VectorSwapInternal(v, i, end, tmp, (int)bytes);
     }
 
     VecFree(v, tmp);
@@ -809,7 +809,7 @@ void VectorSort(Vector *v, int(*compareFunc)(void*, void*)) {
     }
 
     // do the sort
-    auto result = IterativeMergeSort(arr1, arr2, n, size, compareFunc);
+    auto result = IterativeMergeSort(arr1, arr2, (int)n, (int)size, compareFunc);
 
     // push the result back into the vector
     for (i = 0; i < n; i++) {
@@ -848,7 +848,7 @@ Vector* VectorClone(Vector* source, Arena* a) {
     return result;
 }
 
-int VectorElementSize(Vector * v) {
+uint32_t VectorElementSize(Vector * v) {
     if (v == nullptr) return 0;
     return v->ElementByteSize;
 }

@@ -1,3 +1,5 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "bugprone-macro-parentheses"
 #pragma once
 #ifndef vector_h
 #define vector_h
@@ -58,7 +60,7 @@ void* VectorCacheRange(Vector* v, uint32_t* lowIndex, uint32_t* highIndex);
 void VectorFreeCache(Vector* v, void* cache);
 
 // Size of vector elements, in bytes
-int VectorElementSize(Vector *v);
+uint32_t VectorElementSize(Vector *v);
 
 // Return the arena that contains this vector
 Arena* VectorArena(Vector *v);
@@ -101,3 +103,5 @@ void* IterativeMergeSort(void* arr1, void* arr2, int n, int elemSize, int(*compa
 
 
 #endif
+
+#pragma clang diagnostic pop

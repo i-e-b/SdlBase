@@ -77,7 +77,7 @@ inline bool SwapOut(Vector* vec, uint32_t idx, HashMap_Entry* newEntry) {
 
     auto temp = VectorGet(vec, -1);
 
-    if (!VectorSet(vec, idx, newEntry, temp)) {
+    if (!VectorSet(vec, (int)idx, newEntry, temp)) {
         VectorPop(vec, nullptr);
         return false;
     }
@@ -91,7 +91,7 @@ bool PutInternal(HashMap * h, HashMap_Entry* entry, bool canReplace, bool checkD
     uint32_t probeCurrent = 0;
 
     for (uint32_t i = 0; i < h->count; i++) {
-        auto indexCurrent = (indexInit + i) & h->countMod;
+        auto indexCurrent = (int)((indexInit + i) & h->countMod);
 
         if (!VectorIsValid(h->buckets))
             return false;
@@ -130,7 +130,7 @@ bool PutInternal(HashMap * h, HashMap_Entry* entry, bool canReplace, bool checkD
     return PutInternal(h, entry, canReplace, checkDuplicates);
 }
 
-bool Resize(HashMap * h, uint32_t newSize, bool autoSize) {
+bool Resize(HashMap * h, size_t newSize, bool autoSize) {
     auto oldCount = h->count;
     auto oldBuckets = h->buckets;
 
@@ -145,7 +145,7 @@ bool Resize(HashMap * h, uint32_t newSize, bool autoSize) {
 
     h->buckets = newBuckets;
 
-    h->growAt = autoSize ? (uint32_t)(newSize * LOAD_FACTOR) : newSize;
+    h->growAt = autoSize ? (uint32_t)((float)newSize * LOAD_FACTOR) : newSize;
     h->shrinkAt = autoSize ? newSize >> 2 : 0;
 
     h->countUsed = 0;
@@ -158,7 +158,7 @@ bool Resize(HashMap * h, uint32_t newSize, bool autoSize) {
     if (newSize > 0) {
         for (uint32_t i = 0; i < oldCount; i++) {
             // Read and validate old bucket entry
-            auto oldEntry = (HashMap_Entry*)VectorGet(oldBuckets, i);
+            auto oldEntry = (HashMap_Entry*)VectorGet(oldBuckets, (int)i);
             if (oldEntry == nullptr || oldEntry->hash == 0) continue;
 
             // Copy the old entry into the new bucket vector
@@ -196,7 +196,7 @@ bool ResizeNext(HashMap * h) {
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "UnusedLocalVariable"
-HashMap* HashMapAllocateArena(Arena* a, unsigned int size, int keyByteSize, int valueByteSize, bool(*keyComparerFunc)(void* key_A, void* key_B), unsigned int(*getHashFunc)(void* key)) {
+HashMap* HashMapAllocateArena(Arena* a, unsigned int size, int keyByteSize, int valueByteSize, bool(*keyComparerFunc)(void* /*key_A*/, void* /*key_B*/), unsigned int(*getHashFunc)(void* /*key*/)) {
 #pragma clang diagnostic pop
     if (a == nullptr) return nullptr;
     auto result = (HashMap*)ArenaAllocateAndClear(a, sizeof(HashMap));
@@ -214,7 +214,7 @@ HashMap* HashMapAllocateArena(Arena* a, unsigned int size, int keyByteSize, int 
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "UnusedLocalVariable"
-HashMap* HashMapAllocate(unsigned int size, int keyByteSize, int valueByteSize, bool(*keyComparerFunc)(void* key_A, void* key_B), unsigned int(*getHashFunc)(void* key)) {
+HashMap* HashMapAllocate(unsigned int size, int keyByteSize, int valueByteSize, bool(*keyComparerFunc)(void* /*key_A*/, void* /*key_B*/), unsigned int(*getHashFunc)(void* /*key*/)) {
     return HashMapAllocateArena(MMCurrent(), size, keyByteSize, valueByteSize, keyComparerFunc, getHashFunc);
 }
 #pragma clang diagnostic pop
@@ -239,7 +239,7 @@ bool Find(HashMap* h, void* key, uint32_t* index, HashMap_Entry** found) {
 
     for (uint32_t i = 0; i < h->count; i++) {
         *index = (indexInit + i) & h->countMod;
-        auto res = (HashMap_Entry*)VectorGet(h->buckets, *index);
+        auto res = (HashMap_Entry*)VectorGet(h->buckets, (int)(*index));
         if (res == nullptr) return false; // internal failure
 
         auto keyData = KeyPtr(res);
@@ -315,7 +315,7 @@ Vector *HashMapAllEntries(HashMap* h) {
 
     for (uint32_t i = 0; i < h->count; i++) {
         // Read and validate entry
-        auto ent = (HashMap_Entry*)VectorGet(h->buckets, i);
+        auto ent = (HashMap_Entry*)VectorGet(h->buckets, (int)i);
         if (ent->hash == 0) continue;
 
         // Look up pointers to the data
@@ -337,13 +337,13 @@ bool HashMapRemove(HashMap* h, void* key) {
         auto curIndex = (index + i) & h->countMod;
         auto nextIndex = (index + i + 1) & h->countMod;
 
-        auto res = (HashMap_Entry*)VectorGet(h->buckets, nextIndex);
+        auto res = (HashMap_Entry*)VectorGet(h->buckets, (int)nextIndex);
         if (res == nullptr) return false; // internal failure
 
         if ((res->hash == 0) || (DistanceToInitIndex(h, nextIndex, res) == 0))
         {
             auto empty = HashMap_Entry();
-            VectorSet(h->buckets, curIndex, &empty, nullptr);
+            VectorSet(h->buckets, (int)curIndex, &empty, nullptr);
 
             if (--(h->countUsed) == h->shrinkAt) Resize(h, h->shrinkAt, true);
 
