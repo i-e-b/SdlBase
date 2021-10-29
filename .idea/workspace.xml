@@ -17,29 +17,7 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="67086357-fdaa-43bf-8e6a-529e12dac243" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/dictionaries/iain_ballard.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/SdlBase.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/SdlBase.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gui_core/BinHeap.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui_core/BinHeap.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gui_core/Sort.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui_core/Sort.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/ArenaAllocator.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/ArenaAllocator.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/HashMap.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/HashMap.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/HashMap.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/HashMap.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/Heap.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/Heap.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/Heap.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/Heap.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/MathBits.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/MathBits.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/MemoryManager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/MemoryManager.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/RawData.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/RawData.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/String.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/String.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/Vector.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/Vector.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/Vector.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/Vector.h" afterDir="false" />
-    </list>
+    <list default="true" id="67086357-fdaa-43bf-8e6a-529e12dac243" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -85,11 +63,6 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="GradleAppRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="com.jetbrains.cidr.cpp.gradle.execution.GradleNativeBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -111,6 +84,7 @@
       <workItem from="1623833649390" duration="46000" />
       <workItem from="1624958412179" duration="214000" />
       <workItem from="1624958646920" duration="4553000" />
+      <workItem from="1625214885459" duration="230000" />
     </task>
     <servers />
   </component>
@@ -127,5 +101,6 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
 </project>
