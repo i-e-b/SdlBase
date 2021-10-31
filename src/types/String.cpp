@@ -280,16 +280,16 @@ void vStringAppendFormat(String *str, const char* fmt, va_list args) { // NOLINT
             int i = va_arg(args, int);
             StringAppendInt32Hex(str, i);
         } else if (*fmt == '\x04') {
-            char c = va_arg(args, char);
+            char c = (char)va_arg(args, int);
             VPush_char(chars, c);
         } else if (*fmt == '\x05') {
             char* s = va_arg(args, char*);
             StringAppend(str, s);
         } else if (*fmt == '\x06') {
-            bool s = va_arg(args, bool);
+            bool s = (bool)va_arg(args, int);
 			StringAppend(str, (s) ? "true" : "false");
 		} else if (*fmt == '\x07') {
-            char i = va_arg(args, char);
+            char i = (char)va_arg(args, int);
             StringAppendInt8Hex(str, i);
         } else {
             StringAppendChar(str, *fmt);

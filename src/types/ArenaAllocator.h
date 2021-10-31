@@ -7,6 +7,7 @@
 #define ArenaAllocator_h
 
 #include <cstdint>
+#include <cstddef>
 
 // Maximum size of a single allocation
 #define ARENA_ZONE_SIZE 65535

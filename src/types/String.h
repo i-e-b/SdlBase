@@ -8,6 +8,7 @@
 #include "Vector.h"
 #include "ArenaAllocator.h"
 #include <cstdint>
+#include <cstdarg>
 
 // A mutable variable length string structure
 typedef struct String String;
