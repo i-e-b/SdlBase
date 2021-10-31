@@ -88,7 +88,7 @@ void FreeScanBuffer(ScanBuffer * buf)
 
 // Set a point with an exact position, clipped to bounds
 // gradient is 0..15; 15 = vertical; 0 = near horizontal.
-inline void SetSP(ScanBuffer * buf, int x, int y, uint16_t objectId, uint8_t isOn) {
+void SetSP(ScanBuffer * buf, int x, int y, uint16_t objectId, uint8_t isOn) {
     if (y < 0 || y > buf->height) return;
     
    // SwitchPoint sp;
@@ -107,7 +107,7 @@ inline void SetSP(ScanBuffer * buf, int x, int y, uint16_t objectId, uint8_t isO
 	line->count++; // increment pointer
 }
 
-inline void SetMaterial(ScanBuffer* buf, uint16_t objectId, int depth, uint32_t color) {
+void SetMaterial(ScanBuffer* buf, uint16_t objectId, int depth, uint32_t color) {
     if (objectId > OBJECT_MAX) return;
     buf->materials[objectId].color = color;
     buf->materials[objectId].depth = (int16_t)depth;

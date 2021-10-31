@@ -14,15 +14,16 @@
   <component name="CMakeSettings" AUTO_RELOAD="true">
     <configurations>
       <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
+      <configuration PROFILE_NAME="Release" ENABLED="true" CONFIG_NAME="Release" />
     </configurations>
   </component>
   <component name="ChangeListManager">
     <list default="true" id="67086357-fdaa-43bf-8e6a-529e12dac243" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/ArenaAllocator.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/ArenaAllocator.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/String.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/String.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/String.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/String.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/Vector.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/Vector.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -33,9 +34,17 @@
     <option name="formatViaClangd" value="false" />
     <option name="clangWarnings" value="-Wno-unused-variable,-Wno-infinite-recursion,-Werror=implicit-function-declaration,-Wshadow,-Wno-shadow-field-in-constructor-modified,-Wno-shadow-ivar,-Wuninitialized,-Wunused-label,-Wunused-lambda-capture,-Wno-unknown-pragmas" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Release" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
   </component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="zulw3ug7" />
@@ -58,7 +67,7 @@
     <property name="cidr.known.project.marker" value="true" />
     <property name="cmake.loaded.for.project" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+    <property name="settings.editor.selected.configurable" value="preferences.keymap" />
     <property name="settings.editor.splitter.proportion" value="0.2437673" />
   </component>
   <component name="RecentsManager">
@@ -104,7 +113,7 @@
       <workItem from="1624958412179" duration="214000" />
       <workItem from="1624958646920" duration="4553000" />
       <workItem from="1625214885459" duration="230000" />
-      <workItem from="1635667571126" duration="1356000" />
+      <workItem from="1635667571126" duration="3334000" />
     </task>
     <servers />
   </component>

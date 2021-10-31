@@ -11,6 +11,8 @@ IF(WIN32)
     set(CMAKE_CXX_FLAGS_RELEASE "/O2") # When using MSVC compiler
     set(SDL2_LINK_DIR "${PROJECT_SOURCE_DIR}/lib/SDL2-devel-2.0.9-VC/SDL2-2.0.9/lib/x86/SDL2.lib")
 ELSE()
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_DEBUG} -O2")
     find_package(SDL2 REQUIRED)
     set(SDL2_LINK_DIR "${SDL2_LIBRARIES}")
 ENDIF()
@@ -26,7 +28,6 @@ include_directories(./lib/SDL2-devel-2.0.9-VC/SDL2-2.0.9/include)
 link_directories(./lib/SDL2-devel-2.0.9-VC/SDL2-2.0.9/lib)
 ELSE()
     include_directories(${SDL2_INCLUDE_DIRS})
-    #include_directories(/usr/include/SDL2)
 ENDIF()
 
 add_executable(SdlBase

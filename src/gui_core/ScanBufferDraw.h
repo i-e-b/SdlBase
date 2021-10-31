@@ -154,10 +154,10 @@ void ResetScanLine(ScanBuffer* buf, int line);
 void ResetScanLineToColor(ScanBuffer* buf, int line, int z, uint32_t color);
 
 // Set a point with an exact position, clipped to bounds
-inline void SetSP(ScanBuffer * buf, int x, int y, uint16_t objectId, uint8_t isOn);
+void SetSP(ScanBuffer * buf, int x, int y, uint16_t objectId, uint8_t isOn);
 
 // Set or update material values for an object
-inline void SetMaterial(ScanBuffer* buf, uint16_t objectId, int depth, uint32_t color);
+void SetMaterial(ScanBuffer* buf, uint16_t objectId, int depth, uint32_t color);
 
 #endif
 

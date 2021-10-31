@@ -417,7 +417,7 @@ void VectorDeallocate(Vector *v) {
 	ArenaDereference(a, v);
 }
 
-inline unsigned int VectorLength(Vector *v) {
+unsigned int VectorLength(Vector *v) {
     if (v == nullptr) return 0;
     return v->_elementCount;
 }
