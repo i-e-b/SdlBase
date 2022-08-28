@@ -172,8 +172,7 @@ bool FindNearestChunk(Vector *v, uint32_t targetIndex, void **chunkPtr, unsigned
     {
         // guess search bounds
         auto guess = ((targetChunkIdx - 1) * v->_skipEntries) / endChunkIdx;
-        auto lower = guess - 1;
-        if (lower < 0) lower = 0;
+        auto lower = guess == 0 ? 0 : guess - 1;
 
         var baseAddr = byteOffset(v->_skipTable, (SKIP_ELEM_SIZE * lower)); // pointer to skip table entry
         startChunkIdx = readUint(baseAddr, 0);

@@ -223,7 +223,9 @@ void StringAppend(String *first, String *second) {
     if (first == nullptr || second == nullptr) return;
     unsigned int len = VLength(second->chars);
     for (unsigned int i = 0; i < len; i++) {
-        VPush_char(first->chars, *VGet_char(second->chars, (char)i));
+        auto oc = VGet_char(second->chars, i);
+        if (oc == nullptr) break; // Shouldn't happen?
+        VPush_char(first->chars, *oc);
     }
     first->hashval = 0;
 }
