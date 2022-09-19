@@ -9,9 +9,13 @@ This should be pretty plain C code.
 
 ## The plan
 
-*[x] Bring in the container structures and SDL hook-ups from MECS, but not the compiler / runtime engine.
-*[ ] Port the graphics format and compression bits in ImageTools from C#
-*[ ] Port StreamDb over as a file format
+* [x] Bring in the container structures and SDL hook-ups from MECS, but not the compiler / runtime engine.
+* [ ] Add joystick stuff (supporting multiple)
+* [ ] frame-delay guessing to reduce latency (need to change buffering strategy)
+* [ ] Bitmap drawing for the scan buffer thing (rectilinear, then affine)
+* [ ] Easy way to mix plain graphics and the scan-buffer/depth graphics
+* [ ] Port the graphics format and compression bits in ImageTools from C#
+* [ ] Port StreamDb over as a file format
 
 ### Using the base for projects
 

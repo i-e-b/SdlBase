@@ -23,6 +23,10 @@ using namespace std;
 // Holes: A CCW winding polygon will have OFFs before ONs, being inside-out. If a single 'ON' is set before this shape
 //        (Same as a background) then we will fill only where the polygon is *not* present -- this makes vignette effects simple
 
+// TODO: Rather than having colors, we do one giant texture atlas. Spans have a start index, and a length
+//       (length is 2^n, use a mask?), and an increment. Do `next = (curr + incr) & mask`
+//       For flat colors, index is the color, increment and length are zero.
+
 ScanBuffer * InitScanBuffer(int width, int height)
 {
     auto buf = (ScanBuffer*)calloc(1, sizeof(ScanBuffer));
