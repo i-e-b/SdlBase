@@ -27,7 +27,9 @@ typedef struct SwitchPoint {
 } SwitchPoint;
 
 typedef struct Material {
-    uint32_t color;         // RGB (24 bit of color).
+    uint32_t startIndex;    // First color index
+    uint16_t increment;     // per pixel offset through texture atlas
+    uint16_t length;        // count of pixels before looping (must be power of two, can be zero)
     int16_t  depth;         // z-position in final image
 } Material;
 
@@ -40,6 +42,11 @@ typedef struct ScanLine {
     SwitchPoint* points;    // When drawing to the buffer, we can just append. Before rendering, this must be sorted by x-pos
 } ScanLine;
 
+typedef struct TextureAtlas {
+    uint32_t* textureAtlas; // all the texture maps squished together.
+    uint32_t textureEnd;    // offset of next free texture index.
+} TextureAtlas;
+
 // buffer of switch points.
 typedef struct ScanBuffer {
     int height;
@@ -47,10 +54,8 @@ typedef struct ScanBuffer {
 
     ScanLine* scanLines;    // matrix of switch points. (height + SPARE_LINES is size)
 
-    // TODO: move materials and the heaps into the scan-lines?
-    uint16_t materialCount; // used to give each object a depth and color. TODO: add textures
-    uint16_t materialReset; //  roll-back / undo marker for the materials list
     Material* materials;    // draw properties for each object (item count is the max used index, OBJECT_MAX is size)
+    uint16_t materialCount; // used to give each object a depth and color.
 
     void *p_heap, *r_heap;  // internal heaps for depth sorting during rendering
 } ScanBuffer;
@@ -59,61 +64,55 @@ ScanBuffer *InitScanBuffer(int width, int height);
 
 void FreeScanBuffer(ScanBuffer *buf);
 
+
 // Fill a triangle with a solid colour
 void FillTriangle(ScanBuffer *buf,
                   int x0, int y0,
                   int x1, int y1,
                   int x2, int y2,
-                  int z,
-                  int r, int g, int b);
+                  int objectId);
 
 // Fill an axis aligned rectangle
 void FillRect(ScanBuffer *buf,
     int left, int top, int right, int bottom,
-    int z,
-    int r, int g, int b);
+    int objectId);
 
 void FillCircle(ScanBuffer *buf,
     int x, int y, int radius,
-    int z,
-    int r, int g, int b);
+    int objectId);
 
 void FillEllipse(ScanBuffer *buf,
     int xc, int yc, int width, int height,
-    int z,
-    int r, int g, int b);
+    int objectId);
 
 // Fill a quad given 3 points
 void FillTriQuad(ScanBuffer *buf,
     int x0, int y0,
     int x1, int y1,
     int x2, int y2,
-    int z,
-    int r, int g, int b);
+    int objectId);
 
 // draw a line with width
 void DrawLine(ScanBuffer *buf,
     int x0, int y0,
     int x1, int y1,
-    int z, int w, // width
-    int r, int g, int b);
+    int w, // pen width
+    int objectId);
 
 // draw the border of an ellipse
 void OutlineEllipse(ScanBuffer *buf,
     int xc, int yc, int width, int height,
-    int z, int w, // outline width
-    int r, int g, int b);
+    int w, // outline width
+    int objectId);
 
-// Set a background plane
+// Set a full-screen plane. Usually with a high Z value object id
 void SetBackground( ScanBuffer *buf,
-    int z, // depth of the background. Anything behind this will be invisible
-    int r, int g, int b);
+    int objectId);
 
 // draw everywhere except in the ellipse
 void EllipseHole(ScanBuffer *buf,
     int xc, int yc, int width, int height,
-    int z,
-    int r, int g, int b);
+    int objectId);
 
 // Reset all drawing operations in the buffer, ready for next frame
 // Do this *after* rendering to pixel buffer
@@ -126,21 +125,16 @@ uint32_t Blend(uint32_t prop1, uint32_t color1, uint32_t color2);
 // Render a scan buffer to a pixel framebuffer
 // This can be done on a different processor core from other draw commands to spread the load
 // Do not draw to a scan buffer while it is rendering (switch buffers if you need to)
+// The texture/color map can be swapped out for old-school palette effects or texture animation.
 void RenderScanBufferToFrameBuffer(
-    ScanBuffer *buf, // source scan buffer
-    BYTE* data       // target frame-buffer (must match ScanBuffer dimensions)
+    ScanBuffer *buf,   // source scan buffer
+    TextureAtlas *map, // color/texture map to use
+    BYTE* data         // target frame-buffer (must match ScanBuffer dimensions)
 );
 
 // Copy contents of src to dst, replacing dst.
 // The two scan buffers should be the same size
 void CopyScanBuffer(ScanBuffer *src, ScanBuffer *dst);
-
-// Allow us to 'reset' to the drawing to its current state after future drawing commands and renders
-void SetScanBufferResetPoint(ScanBuffer *buf);
-
-// Remove any drawings after the last reset point was set. If none set, all drawings will be removed.
-void ResetScanBuffer(ScanBuffer *buf);
-
 
 // ** Lower-level bits for extending the render engine **
 
@@ -150,14 +144,14 @@ void SwapScanLines(ScanBuffer* buf, int a, int b);
 // Clear a scanline (including background)
 void ResetScanLine(ScanBuffer* buf, int line);
 
-// Clear a scanline, and set a new background color and depth
-void ResetScanLineToColor(ScanBuffer* buf, int line, int z, uint32_t color);
+// Clear a scanline, and set a new background 'object' ID
+void ResetScanLineToColor(ScanBuffer* buf, int line, int objectId);
 
 // Set a point with an exact position, clipped to bounds
 void SetSP(ScanBuffer * buf, int x, int y, uint16_t objectId, uint8_t isOn);
 
-// Set or update material values for an object
-void SetMaterial(ScanBuffer* buf, uint16_t objectId, int depth, uint32_t color);
+// create a new single-color material at the given depth. Returns new material ID
+uint16_t SetSingleColorMaterial(ScanBuffer* buf, TextureAtlas* map, int depth, uint32_t color);
 
 #endif
 

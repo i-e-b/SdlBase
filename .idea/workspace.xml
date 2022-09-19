@@ -26,8 +26,9 @@
   <component name="ChangeListManager">
     <list default="true" id="67086357-fdaa-43bf-8e6a-529e12dac243" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui_core/ScanBufferFont.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui_core/ScanBufferFont.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -74,7 +75,7 @@
     "cidr.known.project.marker": "true",
     "last_opened_file_path": "/home/iain/code/Nargothrond",
     "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "reference.settingsdialog.project.grazie"
+    "settings.editor.selected.configurable": "preferences.keymap"
   }
 }]]></component>
   <component name="RecentsManager">
@@ -124,7 +125,7 @@
       <workItem from="1654629861654" duration="80000" />
       <workItem from="1654629965123" duration="1510000" />
       <workItem from="1661684485397" duration="302000" />
-      <workItem from="1663600089468" duration="550000" />
+      <workItem from="1663600089468" duration="5612000" />
     </task>
     <servers />
   </component>

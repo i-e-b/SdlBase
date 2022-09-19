@@ -780,7 +780,7 @@ uint16_t* charMap[] { // ASCII, starting from 33 (0x21) '!'
 // SetSP(ScanBuffer * buf, int x, int y, uint16_t objectId, uint8_t isOn);
 
 // Set or update material values for an object
-// SetMaterial(ScanBuffer* buf, uint16_t objectId, int depth, uint32_t color);
+// SetSingleColorMaterial(ScanBuffer* buf, uint16_t objectId, int depth, uint32_t color);
 
 #define SAFETY_LIMIT 50
 
@@ -796,7 +796,7 @@ void AddGlyph(ScanBuffer *buf, char c, int x, int y, int z, uint32_t color) {
     // set objectId, color, and depth
     uint16_t objId = buf->materialCount;
     buf->materialCount ++;
-    SetMaterial(buf, objId, z, color);
+    SetSingleColorMaterial(buf, objId, z, color);
 
     // draw points
     bool on = true;

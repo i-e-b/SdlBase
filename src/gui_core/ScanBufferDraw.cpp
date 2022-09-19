@@ -34,15 +34,15 @@ ScanBuffer * InitScanBuffer(int width, int height)
 
     auto sizeEstimate = width * 2;
 
-    // Idea: Have a single list and sort by overall position rather than x (would need a background reset at each scan start?)
-    //       Could also do a 'region' like difference-from-last-scanline?
-
+    // Lookups into the texture atlas
     buf->materials = (Material*)calloc(OBJECT_MAX + 1, sizeof(Material));
     if (buf->materials == nullptr) { FreeScanBuffer(buf); return nullptr; }
 
-    buf->scanLines = (ScanLine*)calloc(height+SPARE_LINES, sizeof(ScanLine)); // we use a spare pairs of lines as sorting temp memory
+    // we use a spare pairs of lines as sorting temp memory
+    buf->scanLines = (ScanLine*)calloc(height+SPARE_LINES, sizeof(ScanLine));
     if (buf->scanLines == nullptr) { FreeScanBuffer(buf); return nullptr; }
 
+    // set-up all the scanlines
     for (int i = 0; i < height + SPARE_LINES; i++) {
         auto scanBuf = (SwitchPoint*)calloc(sizeEstimate + 1, sizeof(SwitchPoint));
         if (scanBuf == nullptr) { FreeScanBuffer(buf); return nullptr; }
@@ -54,6 +54,7 @@ ScanBuffer * InitScanBuffer(int width, int height)
         buf->scanLines[i].dirty = true;
     }
 
+    // set up the layer heaps
     buf->p_heap = HeapInit(OBJECT_MAX);
     if (buf->p_heap == nullptr) {
         FreeScanBuffer(buf);
@@ -66,8 +67,8 @@ ScanBuffer * InitScanBuffer(int width, int height)
         return nullptr;
     }
 
+    // set initial sizes and counts
     buf->materialCount = 0;
-    buf->materialReset = 0;
 
     buf->height = height;
     buf->width = width;
@@ -111,9 +112,16 @@ void SetSP(ScanBuffer * buf, int x, int y, uint16_t objectId, uint8_t isOn) {
 	line->count++; // increment pointer
 }
 
-void SetMaterial(ScanBuffer* buf, uint16_t objectId, int depth, uint32_t color) {
-    if (objectId > OBJECT_MAX) return;
-    buf->materials[objectId].color = color;
+uint16_t SetSingleColorMaterial(ScanBuffer* buf, TextureAtlas* map, int depth, uint32_t color) {
+    if (buf->materialCount+1 >= OBJECT_MAX) return 0;
+
+    uint16_t objectId = ++(buf->materialCount);
+    uint32_t newIndex = map->textureEnd++;
+    map->textureAtlas[newIndex] = color;
+
+    buf->materials[objectId].startIndex = newIndex;
+    buf->materials[objectId].increment = 0;
+    buf->materials[objectId].length = 1;
     buf->materials[objectId].depth = (int16_t)depth;
 }
 
@@ -123,14 +131,12 @@ void SetLine(
     ScanBuffer *buf,
     int x0, int y0,
     int x1, int y1,
-    int z,
-    uint32_t r, uint32_t g, uint32_t b)
+    uint32_t objectId)
 {
     if (y0 == y1) {
         return; // ignore: no scanlines would be affected
     }
 
-    uint32_t color = ((r & 0xffu) << 16u) + ((g & 0xffu) << 8u) + (b & 0xffu);
     int h = buf->height;
     uint8_t isOn;
     
@@ -148,9 +154,6 @@ void SetLine(
     int bottom = (y1 > h) ? h : y1;
     float grad = (float)(x0 - x1) / (float)(y0 - y1);
 
-    auto objectId = buf->materialCount;
-    SetMaterial(buf, objectId, z, color);
-
     for (int y = top; y < bottom; y++) // skip the last pixel to stop double-counting
     {
         // add a point.
@@ -163,50 +166,41 @@ void SetLine(
 // Internal: Fill an axis aligned rectangle
 void GeneralRect(ScanBuffer *buf,
     int left, int top, int right, int bottom,
-    int z,
-    int r, int g, int b)
+    int objectId)
 {
     if (left >= right || top >= bottom) return; //empty
     SetLine(buf,
         left, bottom,
         left, top,
-        z, r, g, b);
+        objectId);
     SetLine(buf,
         right, top,
         right, bottom,
-        z, r, g, b);
+        objectId);
 }
 
 // Fill an axis aligned rectangle
 void FillRect(ScanBuffer *buf,
     int left, int top, int right, int bottom,
-    int z,
-    int r, int g, int b)
+    int objectId)
 {
-    if (z < 0) return; // behind camera
-    GeneralRect(buf, left, top, right, bottom, z, r, g, b);
-
-    buf->materialCount++;
+    GeneralRect(buf, left, top, right, bottom, objectId);
 }
 
 void FillCircle(ScanBuffer *buf,
     int x, int y, int radius,
-    int z,
-    int r, int g, int b) {
+    int objectId) {
     FillEllipse(buf,
         x, y, radius * 2, radius * 2,
-        z,
-        r, g, b);
+        objectId);
 }
 
 
 void GeneralEllipse(ScanBuffer *buf,
                     int xc, int yc, int width, int height,
-                    int z, bool positive,
-                    uint32_t r, uint32_t g, uint32_t b)
+                    bool positive,
+                    int objectId)
 {
-    uint32_t color = ((r & 0xffu) << 16u) + ((g & 0xffu) << 8u) + (b & 0xffu);
-
     uint8_t left = (positive) ? (ON) : (OFF);
     uint8_t right = (positive) ? (OFF) : (ON);
 
@@ -214,9 +208,6 @@ void GeneralEllipse(ScanBuffer *buf,
     int b2 = height * height;
     int fa2 = 4 * a2, fb2 = 4 * b2;
     int x, y, ty, sigma;
-    
-    auto objectId = buf->materialCount;
-    SetMaterial(buf, objectId, z, color);
 
     // Top and bottom (need to ensure we don't double the scanlines)
     for (x = 0, y = height, sigma = 2 * b2 + a2 * (1 - 2 * height); b2*x <= a2 * y; x++) {
@@ -257,36 +248,23 @@ void GeneralEllipse(ScanBuffer *buf,
 
 void FillEllipse(ScanBuffer *buf,
     int xc, int yc, int width, int height,
-    int z,
-    int r, int g, int b)
+    int objectId)
 {
-    if (z < 0) return; // behind camera
-
     GeneralEllipse(buf,
         xc, yc, width, height,
-        z, true,
-        r, g, b);
-
-    buf->materialCount++;
+        true, objectId);
 }
 
 void EllipseHole(ScanBuffer *buf,
     int xc, int yc, int width, int height,
-    int z,
-    int r, int g, int b) {
-
-    if (z < 0) return; // behind camera
-
+    int objectId) {
     // set background
-    GeneralRect(buf, 0, 0, buf->width, buf->height, z, r, g, b);
+    GeneralRect(buf, 0, 0, buf->width, buf->height, objectId);
 
     // Same as ellipse, but with on and off flipped to make hole
     GeneralEllipse(buf,
         xc, yc, width, height,
-        z, false,
-        r, g, b);
-
-    buf->materialCount++;
+        false, objectId);
 }
 
 // Fill a quad given 3 points
@@ -294,11 +272,9 @@ void FillTriQuad(ScanBuffer *buf,
     int x0, int y0,
     int x1, int y1,
     int x2, int y2,
-    int z,
-    int r, int g, int b) {
+    int objectId) {
     // Basically the same as triangle, but we also draw a mirror image across the xy1/xy2 plane
     if (buf == nullptr) return;
-    if (z < 0) return; // behind camera
 
     if (x2 == x1 && x0 == x1 && y0 == y1 && y1 == y2) return; // empty
 
@@ -313,12 +289,10 @@ void FillTriQuad(ScanBuffer *buf,
         tmp = y1; y1 = y2; y2 = tmp;
         dx1 = dx2; dy1 = dy2;
     }
-    SetLine(buf, x0, y0, x1, y1, z, r, g, b);
-    SetLine(buf, x1, y1, x2 + dx1, y2 + dy1, z, r, g, b);
-    SetLine(buf, x2 + dx1, y2 + dy1, x2, y2, z, r, g, b);
-    SetLine(buf, x2, y2, x0, y0, z, r, g, b);
-
-    buf->materialCount++;
+    SetLine(buf, x0, y0, x1, y1, objectId);
+    SetLine(buf, x1, y1, x2 + dx1, y2 + dy1, objectId);
+    SetLine(buf, x2 + dx1, y2 + dy1, x2, y2,objectId);
+    SetLine(buf, x2, y2, x0, y0, objectId);
 }
 
 float isqrt(float number) {
@@ -338,7 +312,7 @@ float isqrt(float number) {
 	return y;
 }
 
-void DrawLine(ScanBuffer * buf, int x0, int y0, int x1, int y1, int z, int w, int r, int g, int b)
+void DrawLine(ScanBuffer * buf, int x0, int y0, int x1, int y1, int w, int objectId)
 {
     if (w < 1) return; // empty
 
@@ -364,25 +338,21 @@ void DrawLine(ScanBuffer * buf, int x0, int y0, int x1, int y1, int z, int w, in
 
     FillTriQuad(buf, x0, y0, x1, y1,
         x0 + (int)(ndx), y0 + (int)(ndy),
-        z, r, g, b);
+        objectId);
 }
 
-void OutlineEllipse(ScanBuffer * buf, int xc, int yc, int width, int height, int z, int w, int r, int g, int b)
+void OutlineEllipse(ScanBuffer * buf, int xc, int yc, int width, int height, int w, int objectId)
 {
-    if (z < 0) return; // behind camera
-
     int w1 = w / 2;
     int w2 = w - w1;
 
     GeneralEllipse(buf,
         xc, yc, width + w2, height + w2,
-        z, true, r, g, b);
+        true, objectId);
 
     GeneralEllipse(buf,
         xc, yc, width - w1, height - w1,
-        z, false, r, g, b);
-
-    buf->materialCount++;
+        false, objectId);
 }
 
 // Fill a triangle with a solid colour
@@ -393,11 +363,9 @@ void FillTriangle(
     int x0, int y0,
     int x1, int y1,
     int x2, int y2,
-    int z,
-    int r, int g, int b)
+    int objectId)
 {
     if (buf == nullptr) return;
-    if (z < 0) return; // behind camera
 
     if (x0 == x1 && x1 == x2) return; // empty
     if (y0 == y1 && y1 == y2) return; // empty
@@ -409,31 +377,25 @@ void FillTriangle(
     int dz = dx1 * dy2 - dy1 * dx2;
 
     if (dz > 0) { // cw
-        SetLine(buf, x0, y0, x1, y1, z, r, g, b);
-        SetLine(buf, x1, y1, x2, y2, z, r, g, b);
-        SetLine(buf, x2, y2, x0, y0, z, r, g, b);
+        SetLine(buf, x0, y0, x1, y1, objectId);
+        SetLine(buf, x1, y1, x2, y2, objectId);
+        SetLine(buf, x2, y2, x0, y0, objectId);
     } else { // ccw - switch vertex 1 and 2 to make it clockwise.
-        SetLine(buf, x0, y0, x2, y2, z, r, g, b);
-        SetLine(buf, x2, y2, x1, y1, z, r, g, b);
-        SetLine(buf, x1, y1, x0, y0, z, r, g, b);
+        SetLine(buf, x0, y0, x2, y2, objectId);
+        SetLine(buf, x2, y2, x1, y1, objectId);
+        SetLine(buf, x1, y1, x0, y0, objectId);
     }
-
-    buf->materialCount++;
 }
 
 // Set a single 'on' point at the given level on each scan line
 void SetBackground(
     ScanBuffer *buf,
-    int z, // depth of the background. Anything behind this will be invisible
-    int r, int g, int b) {
-    if (z < 0) return; // behind camera
-
+    int objectId)
+{
     SetLine(buf,
         0, buf->height,
         0, 0,
-        z, r, g, b);
-
-    buf->materialCount++;
+        objectId);
 }
 
 // Reset all drawing operations in the buffer, ready for next frame
@@ -442,7 +404,6 @@ void ClearScanBuffer(ScanBuffer * buf)
 {
     if (buf == nullptr) return;
     buf->materialCount = 0; // reset object ids
-    buf->materialReset = 0; // reset object ids
     for (int i = 0; i < buf->height; i++)
     {
         buf->scanLines[i].count = 0;
@@ -463,7 +424,7 @@ void ResetScanLine(ScanBuffer* buf, int line)
 }
 
 // Clear a scanline, and set a new background color and depth
-void ResetScanLineToColor(ScanBuffer* buf, int line, int z, uint32_t color)
+void ResetScanLineToColor(ScanBuffer* buf, int line, int objectId)
 {
     if (buf == nullptr) return;
     if (line < 0 || line >= buf->height) return;
@@ -472,8 +433,6 @@ void ResetScanLineToColor(ScanBuffer* buf, int line, int z, uint32_t color)
     buf->scanLines[line].resetPoint = 0;
     buf->scanLines[line].dirty = true;
 
-    auto objectId = buf->materialCount;
-    SetMaterial(buf, objectId, z, color);
     SetSP(buf, 0, line, objectId, true);
 }
 
@@ -509,11 +468,12 @@ void CopyScanBuffer(ScanBuffer *src, ScanBuffer *dst)
     // object materials
     auto mc = src->materialCount;
     for (int i = 0; i < mc; ++i) {
-        dst->materials[i].color = src->materials[i].color;
+        dst->materials[i].startIndex = src->materials[i].startIndex;
+        dst->materials[i].length = src->materials[i].length;
+        dst->materials[i].increment = src->materials[i].increment;
         dst->materials[i].depth = src->materials[i].depth;
     }
     dst->materialCount = src->materialCount;
-    dst->materialReset = src->materialReset;
 
     // scanline switch points
     auto max = src->height;
@@ -529,29 +489,6 @@ void CopyScanBuffer(ScanBuffer *src, ScanBuffer *dst)
         dst->scanLines[i].dirty      = src->scanLines[i].dirty;
     }
 }
-
-
-// Allow us to 'reset' to the drawing to its current state after future drawing commands and renders
-void SetScanBufferResetPoint(ScanBuffer *buf) {
-    if (buf == nullptr) return;
-    buf->materialReset = buf->materialCount;
-    for (int i = 0; i < buf->height; i++)
-    {
-        buf->scanLines[i].resetPoint = buf->scanLines[i].count;
-    }
-}
-
-// Remove any drawings after the last reset point was set. If none set, all drawings will be removed.
-void ResetScanBuffer(ScanBuffer *buf){
-    if (buf == nullptr) return;
-    buf->materialCount = buf->materialReset;
-    for (int i = 0; i < buf->height; i++)
-    {
-        buf->scanLines[i].count = buf->scanLines[i].resetPoint;
-        buf->scanLines[i].dirty = true;
-    }
-}
-
 
 // blend two colors, by a proportion [0..255]
 // 255 is 100% color1; 0 is 100% color2.
@@ -604,6 +541,7 @@ inline void CleanUpHeaps(PriorityQueue p_heap, PriorityQueue r_heap) {
 // The core rendering algorithm. This is done for each scanline.
 void RenderScanLine(
     ScanBuffer *buf,             // source scan buffer
+    TextureAtlas *map,           // color/texture map to use
     int lineIndex,               // index of the line we're drawing
     BYTE* data                   // target frame-buffer
 ) {
@@ -641,7 +579,15 @@ void RenderScanLine(
 
     bool on = false;
     uint32_t p = 0; // current pixel
-    uint32_t color = 0; // color of current object
+
+    // texture mapping
+    uint32_t mapBase = 0; // index into texture atlas of current object
+    uint32_t mapOffset = 0; // offset from mapBase for this pixel
+    uint32_t mapIncrement = 0; // size of step through texture atlas for each pixel
+    uint32_t mapMask = 0; // mask for map offset (constrains length)
+
+    auto texture = map->textureAtlas;
+
     SwitchPoint current; // top-most object's most recent "on" switch
     for (int i = 0; i < count; i++)
     {
@@ -655,17 +601,11 @@ void RenderScanLine(
                 auto max = (sw.xPos > end) ? end : sw.xPos;
                 auto d = (uint32_t*)(data + ((p + yOff) * sizeof(uint32_t)));
                 for (; p < max; p++) {
-                    // TODO: more materials here (textures at least)
-                    // -- 'fade rate'
-                    //if (current.fade < 15) current.fade++;
+                    // copy textel to output
+                    *(d++) = texture[mapBase+mapOffset];
 
-                    // -- smear / blur test
-                    //c = Blend(128, color, c); // smearing blur. `prop1` Should lower for flatter angles
-                    //*(d++) = c;
-
-                    // -- plain:
-                    *(d++) = color;
-
+                    // advance to next textel
+                    mapOffset = (mapOffset + mapIncrement) & mapMask;
                 } // draw pixels up to the point
             } else p = sw.xPos; // skip direct to the point
         }
@@ -682,35 +622,31 @@ void RenderScanLine(
         on = HeapTryFindMin(p_heap, &top);
 
         if (on) {
-            // set color for next run based on top of p_heap
-            //color = materials[top.identifier].color;
-            current = list[top.lookup];
-            color = materials[current.id].color;
-
-            // If there is another object underneath, we store the color for antialiasing.
-            /*ElementType nextObj = { 0,0,0 };
-            if (HeapTryFindNext(p_heap, &nextObj)) {
-                color_under = materials[nextObj.identifier].color;
-            } else {
-                color_under = 0;
-            }*/
+            // set mapIndex for next run based on top of p_heap
+            auto next = list[top.lookup];
+            if (current.id != next.id) { // switching material
+                // TODO: we need to calculate how far through the texture we are;
+                //       e.g. if we become uncovered half way along the span, we should
+                //       start the texture 50% across.
+                current = list[top.lookup];
+                mapBase = materials[current.id].startIndex;
+                mapIncrement = materials[current.id].increment;
+                mapMask = materials[current.id].length - 1; // MUST be a power-of-two or things will go weird
+                mapOffset = 0;
+            }
         } else {
-            color = 0;
+            mapBase = 0;
         }
-
-
-#if 0
-        // DEBUG: show switch point in black
-        int pixoff = ((yOff + sw.xPos - 1) * 4);
-        if (pixoff > 0) { data[pixoff + 0] = data[pixoff + 1] = data[pixoff + 2] = 0; }
-        // END
-#endif
     } // out of switch points
 
     
     if (on) { // fill to end of data
         for (; p < end; p++) {
-            ((uint32_t*)data)[p + yOff] = color;
+            // copy textel to output
+            ((uint32_t*)data)[p + yOff] = texture[mapBase+mapOffset];
+
+            // advance to next textel
+            mapOffset = (mapOffset + mapIncrement) & mapMask;
         }
     }
     
@@ -721,12 +657,13 @@ void RenderScanLine(
 // Do not draw to a scan buffer while it is rendering (switch buffers if you need to)
 void RenderScanBufferToFrameBuffer(
     ScanBuffer *buf, // source scan buffer
+    TextureAtlas *map, // color/texture map to use
     BYTE* data       // target frame-buffer (must match scanbuffer dimensions)
 ) {
     if (buf == nullptr || data == nullptr) return;
 
     for (int i = 0; i < buf->height; i++) {
-        RenderScanLine(buf, i, data);
+        RenderScanLine(buf, map, i, data);
     }
 }
 
