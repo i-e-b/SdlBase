@@ -26,15 +26,13 @@
   <component name="ChangeListManager">
     <list default="true" id="67086357-fdaa-43bf-8e6a-529e12dac243" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/app_start.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/app_start.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/app_start.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/app_start.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/demo.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/demo.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/demo.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/demo.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui_core/ScanBufferDraw.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/gui_core/ScanBufferFont.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui_core/ScanBufferFont.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gui_core/ScanBufferFont.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui_core/ScanBufferFont.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,19 +69,19 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "last_opened_file_path": "/home/iain/code/Nargothrond",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.keymap"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/iain/code/Nargothrond&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.keymap&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Gits\SdlBase\src\gui_core" />
@@ -96,11 +94,6 @@
       </method>
     </configuration>
     <configuration name="SdlBase" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SdlBase" TARGET_NAME="SdlBase" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="SdlBase" RUN_TARGET_NAME="SdlBase">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -131,7 +124,8 @@
       <workItem from="1654629861654" duration="80000" />
       <workItem from="1654629965123" duration="1510000" />
       <workItem from="1661684485397" duration="302000" />
-      <workItem from="1663600089468" duration="12867000" />
+      <workItem from="1663600089468" duration="13290000" />
+      <workItem from="1663960196687" duration="5465000" />
     </task>
     <servers />
   </component>

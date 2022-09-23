@@ -17,18 +17,24 @@
 // describes a scan line 'object', which is a slice of the
 // texture atlas and a Z depth. TODO: rename all the 'objectId' stuff to 'materialId'
 typedef struct Material {
-    uint32_t startIndex;    // First textel index
-    uint16_t increment;     // per pixel offset through texture atlas
+    uint32_t startIndex;    // Base (lowest) textel index
+
+    bool screenSpace;       // if true, texture is static on screen. Otherwise it follow object edge
+    uint16_t startOffset;   // initial offset
+    uint16_t increment;     // per pixel offset through texture atlas. Use overflow to reverse.
     uint16_t length;        // count of textels before looping (must be power of two, can be zero)
+
     int16_t  depth;         // z-position in final image
 } Material;
 
 typedef struct TextureAtlas {
     uint32_t* textureAtlas; // all the texture maps squished together.
-    uint32_t textureEnd;    // offset of next free texture index.
+    uint32_t textelCount;   // offset of next free texture index.
+    uint32_t atlasSize;     // size of the texture array
 
     Material* materials;    // draw properties for each object (item count is the max used index, OBJECT_MAX is size)
     uint16_t materialCount; // offset of the next free object
+    uint32_t materialSize;  // size of the material array
 } TextureAtlas;
 
 // Init a next texture atlas with space for the given number of textels
@@ -41,11 +47,31 @@ void FreeTextureAtlas(TextureAtlas* map);
 void ResetTextureAtlas(TextureAtlas* map);
 
 // create a new single-color material at the given depth. Returns new material ID
-uint16_t SetSingleColorMaterial(TextureAtlas* map, int depth, uint32_t color);
+uint16_t AddSingleColorMaterial(TextureAtlas* map, int depth, uint32_t color);
 
 // create a new single-color material at the given depth. Returns new material ID
-uint16_t SetSingleColorMaterialRgb(TextureAtlas* map, int depth, uint8_t r, uint8_t g, uint8_t b);
+uint16_t AddSingleColorMaterialRgb(TextureAtlas* map, int depth, uint8_t r, uint8_t g, uint8_t b);
 
+// copy texture data into the atlas, returning its base
+// input format is [r,g,b,r,g,b...] 8 bits per channel. Array should be 3*pixel count
+uint32_t AddTextureRgb(TextureAtlas* map, uint8_t* bytes, int pixelCount);
+
+// create a new material that maps to existing parts of the texture atlas
+// returns the new objectId
+// assumes start offset of zero, and using object space
+uint16_t AddTextureMaterial(TextureAtlas* map, int16_t depth, uint32_t base, uint16_t increment, uint16_t length);
+
+// create a new material that maps to existing parts of the texture atlas
+// returns the new objectId
+// This sets the texture to screen space, meaning it doesn't follow the object
+uint16_t AddTextureMaterialScreenSpace(TextureAtlas* map, int16_t depth, uint32_t base, uint16_t increment, uint16_t length);
+
+// Change the offset of an existing material
+// this will make the texture slide
+void SetMaterialOffset(TextureAtlas* map, uint16_t objectId, uint16_t newOffset);
+
+// Change the Z depth of an existing material
+void SetMaterialDepth(TextureAtlas* map, uint16_t objectId, int16_t newDepth);
 //---------------------------- SCANLINES ----------------------------------------//
 
 

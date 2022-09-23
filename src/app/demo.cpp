@@ -4,7 +4,7 @@
 #include "demo.h"
 
 void log(DrawTarget *draw, String *line, int x, int y, int z, uint32_t color) {
-    auto objectId = SetSingleColorMaterial(draw->textures, z, color);
+    auto objectId = AddSingleColorMaterial(draw->textures, z, color);
     while (auto c = StringDequeue(line)) {
         AddGlyph(draw->scanBuffer, c, x, y, objectId);
         x += 8;

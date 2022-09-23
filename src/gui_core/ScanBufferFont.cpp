@@ -780,7 +780,7 @@ uint16_t* charMap[] { // ASCII, starting from 33 (0x21) '!'
 // SetSP(ScanBuffer * buf, int x, int y, uint16_t objectId, uint8_t isOn);
 
 // Set or update material values for an object
-// SetSingleColorMaterial(ScanBuffer* buf, uint16_t objectId, int depth, uint32_t color);
+// AddSingleColorMaterial(ScanBuffer* buf, uint16_t objectId, int depth, uint32_t color);
 
 #define SAFETY_LIMIT 50
 

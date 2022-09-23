@@ -18,7 +18,7 @@ void HandleEvent(SDL_Event *event, volatile ApplicationGlobalState *state) {
 }
 
 void writeString(DrawTarget *draw, String *line, int x, int y, int z, uint32_t color) {
-    auto objectId = SetSingleColorMaterial(draw->textures, z, color);
+    auto objectId = AddSingleColorMaterial(draw->textures, z, color);
     while (auto c = StringDequeue(line)) {
         AddGlyph(draw->scanBuffer, c, x, y, objectId);
         x += 8;
@@ -51,24 +51,43 @@ void drawMouseHalo(DrawTarget *draw){
         g = b = 0x00;
         sz = 15;
     }
-    auto objectId = SetSingleColorMaterialRgb(draw->textures, 5, r, g, b);
+    //auto objectId = AddSingleColorMaterialRgb(draw->textures, 5, r, g, b);
+
+    uint8_t test[24] = {250,0,0,     200,50,0,    150,100,0,   100,150,0,
+                        50,200,0,    0,250,0,     50,200,0,    100,150,0};
+    auto base = AddTextureRgb(draw->textures, test, 8);
+    auto objectId = AddTextureMaterialScreenSpace(draw->textures, 5, base, 1, 8);
+
     OutlineEllipse(draw->scanBuffer, x, y, sz, sz, 5, objectId);
 }
 
-void DrawToScanBuffer(DrawTarget *drawTarget, int frame, uint32_t frameTime) {
+void DrawToScanBuffer(DrawTarget *draw, int frame, uint32_t frameTime) {
     MMPush(1 MEGABYTE); // prepare a per-frame bump allocator
 
-    ResetTextureAtlas(drawTarget->textures);
+    ResetTextureAtlas(draw->textures); // really wasteful. Move this away
 
-    ClearScanBuffer(drawTarget->scanBuffer); // wipe out switch-point buffer
+    ClearScanBuffer(draw->scanBuffer); // wipe out switch-point buffer
 
-    SetBackground(drawTarget->scanBuffer, SetSingleColorMaterialRgb(drawTarget->textures, 10000, 50, 50, 70));
+    SetBackground(draw->scanBuffer, AddSingleColorMaterialRgb(draw->textures, 10000, 50, 50, 70));
 
     auto line = StringNew("Welcome to the sdl program base! Press any key to stop. Close window to exit");
-    writeString(drawTarget, line, 16, 30, 1, 0xffffff);
+    writeString(draw, line, 16, 30, 1, 0xffffff);
 
-    drawInfoMessage(drawTarget, frame, frameTime);
-    drawMouseHalo(drawTarget);
+    drawInfoMessage(draw, frame, frameTime);
+    drawMouseHalo(draw);
+
+    /*  big texture box for testing */
+
+    uint8_t test[24] = {0,50,0,     0,50,0,    0,50,0,    0,50,0,
+                        0,50,250,   0,50,250,  0,50,250,  0,50,250};
+    auto base = AddTextureRgb(draw->textures, test, 8);
+    auto objectId = AddTextureMaterial(draw->textures, 100, base, 1, 8);
+    SetMaterialOffset(draw->textures, objectId, frame/20);
+
+    FillRect(draw->scanBuffer, 100, 100, 300, 300, objectId);
+
+
+
 
     MMPop(); // wipe out anything we allocated in this frame.
 }

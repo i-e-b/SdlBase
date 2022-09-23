@@ -13,6 +13,14 @@ This should be pretty plain C code.
 * [ ] Add joystick stuff (supporting multiple)
 * [ ] frame-delay guessing to reduce latency (need to change buffering strategy)
 * [ ] Bitmap drawing for the scan buffer thing (rectilinear, then affine)
+  * [x] texture atlas drawing
+    * [x] fix uncovering issue
+    * [x] allow materials to have offsets & offset mode (screen, edge)
+    * [x] edit material (change Z, change offset)
+  * [ ] PNG loading (PicoPNG? SDL?)
+  * [ ] some tool to pack sprites down to minimal size
+  * [ ] some format to save/load texture atlas material defs.
+  * [ ] sprite splat
 * [ ] Easy way to mix plain graphics and the scan-buffer/depth graphics
 * [ ] Port the graphics format and compression bits in ImageTools from C#
 * [ ] Port StreamDb over as a file format

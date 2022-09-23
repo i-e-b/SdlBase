@@ -530,9 +530,6 @@ void RenderScanLine(
     auto count = scanLine->count;
 
     // Copy switch points to the scratch space. This allows for our push/pop graphics storage.
-    /*auto dst = tmpLine1->points;
-    auto src = scanLine->points;
-    for (int i = 0; i < count; ++i) { *(dst++) = *(src++); }*/
     for (int i = 0; i < count; ++i) {
         tmpLine1->points[i] = scanLine->points[i];
     }
@@ -571,8 +568,9 @@ void RenderScanLine(
 
         if (sw.xPos > p) { // render up to this switch point
             if (on) {
-                auto max = (sw.xPos > end) ? end : sw.xPos;
-                auto d = (uint32_t*)(data + ((p + yOff) * sizeof(uint32_t)));
+                auto max = (sw.xPos > end) ? end : sw.xPos; // clip right edge
+                auto d = (uint32_t*)(data + ((p + yOff) * sizeof(uint32_t))); // get display pointer
+
                 for (; p < max; p++) {
                     // copy textel to output
                     *(d++) = texture[mapBase+mapOffset];
@@ -598,14 +596,22 @@ void RenderScanLine(
             // set mapIndex for next run based on top of p_heap
             auto next = list[top.lookup];
             if (current.id != next.id) { // switching material
-                // TODO: we need to calculate how far through the texture we are;
+                current = list[top.lookup];
+                auto paint = materials[current.id];
+                mapBase = paint.startIndex;
+                mapIncrement = paint.increment;
+                mapMask = paint.length - 1; // MUST be a power-of-two or things will go weird
+
+                // update initial offset if it was hidden
+                //       we need to calculate how far through the texture we are;
                 //       e.g. if we become uncovered half way along the span, we should
                 //       start the texture 50% across.
-                current = list[top.lookup];
-                mapBase = materials[current.id].startIndex;
-                mapIncrement = materials[current.id].increment;
-                mapMask = materials[current.id].length - 1; // MUST be a power-of-two or things will go weird
-                mapOffset = 0;
+                if (paint.screenSpace) {
+                    mapOffset = ((p + paint.startOffset) * mapIncrement) & mapMask;
+                } else {
+                    mapOffset = paint.startOffset;
+                    mapOffset = (mapOffset + (p - next.xPos) * mapIncrement) & mapMask;
+                }
             }
         } else {
             mapBase = 0;
@@ -645,11 +651,13 @@ TextureAtlas *InitTextureAtlas(int textureSpace) {
     if (map == nullptr) return nullptr;
 
     // the texture atlas' textels
-    map->textureAtlas = (uint32_t*)malloc(textureSpace + 1);
+    map->textelCount = textureSpace;
+    map->textureAtlas = (uint32_t*)calloc(textureSpace + 1, sizeof(uint32_t));
     if (map->textureAtlas == nullptr) { FreeTextureAtlas(map); return nullptr; }
-    map->textureEnd = 0;
+    map->textelCount = 0;
 
     // Lookups into the texture atlas
+    map->materialSize = OBJECT_MAX;
     map->materials = (Material*)calloc(OBJECT_MAX + 1, sizeof(Material));
     if (map->materials == nullptr) { FreeTextureAtlas(map); return nullptr; }
     map->materialCount = 0;
@@ -666,19 +674,19 @@ void FreeTextureAtlas(TextureAtlas *map) {
 
 void ResetTextureAtlas(TextureAtlas *map) {
     if (map == nullptr) return;
-    map->textureEnd = 0;
+    map->textelCount = 0;
     map->materialCount = 0;
 }
-uint16_t SetSingleColorMaterialRgb(TextureAtlas* map, int depth, uint8_t r, uint8_t g, uint8_t b){
+uint16_t AddSingleColorMaterialRgb(TextureAtlas* map, int depth, uint8_t r, uint8_t g, uint8_t b){
     uint32_t color = ((r & 0xffu) << 16u) + ((g & 0xffu) << 8u) + (b & 0xffu);
-    return SetSingleColorMaterial(map, depth, color);
+    return AddSingleColorMaterial(map, depth, color);
 }
 
-uint16_t SetSingleColorMaterial(TextureAtlas* map, int depth, uint32_t color) {
+uint16_t AddSingleColorMaterial(TextureAtlas* map, int depth, uint32_t color) {
     if (map->materialCount+1 >= OBJECT_MAX) return 0;
 
     uint16_t objectId = ++(map->materialCount);
-    uint32_t newIndex = map->textureEnd++;
+    uint32_t newIndex = map->textelCount++;
     map->textureAtlas[newIndex] = color;
 
     map->materials[objectId].startIndex = newIndex;
@@ -687,6 +695,69 @@ uint16_t SetSingleColorMaterial(TextureAtlas* map, int depth, uint32_t color) {
     map->materials[objectId].depth = (int16_t)depth;
 
     return objectId;
+}
+
+uint32_t AddTextureRgb(TextureAtlas *map, uint8_t *bytes, int pixelCount) {
+    if (map == nullptr) return 0;
+    if (pixelCount > (map->atlasSize - map->textelCount)) return 0; // no free space. TODO: grow.
+
+    uint32_t base = map->textelCount;
+    for (int i = 0; i < pixelCount; ++i) {
+        uint8_t r = *(bytes++);
+        uint8_t g = *(bytes++);
+        uint8_t b = *(bytes++);
+        uint32_t color = ((r & 0xffu) << 16u) + ((g & 0xffu) << 8u) + (b & 0xffu);
+        map->textureAtlas[map->textelCount] = color;
+        map->textelCount++;
+    }
+    return base;
+}
+
+uint16_t AddTextureMaterial(TextureAtlas *map, int16_t depth, uint32_t base, uint16_t increment, uint16_t length) {
+    if (map == nullptr) return 0;
+    if ((map->materialSize - map->materialCount) < 1) return 0; // no free space
+
+    uint16_t objectId = ++(map->materialCount);
+
+    map->materials[objectId].startIndex = base;
+    map->materials[objectId].startOffset = 0;
+    map->materials[objectId].increment = increment;
+    map->materials[objectId].length = length;
+    map->materials[objectId].depth = depth;
+    map->materials[objectId].screenSpace = false;
+
+    return objectId;
+}
+
+uint16_t
+AddTextureMaterialScreenSpace(TextureAtlas *map, int16_t depth, uint32_t base, uint16_t increment, uint16_t length) {
+    if (map == nullptr) return 0;
+    if ((map->materialSize - map->materialCount) < 1) return 0; // no free space
+
+    uint16_t objectId = ++(map->materialCount);
+
+    map->materials[objectId].startIndex = base;
+    map->materials[objectId].startOffset = 0;
+    map->materials[objectId].increment = increment;
+    map->materials[objectId].length = length;
+    map->materials[objectId].depth = depth;
+    map->materials[objectId].screenSpace = true;
+
+    return objectId;
+}
+
+void SetMaterialOffset(TextureAtlas *map, uint16_t objectId, uint16_t newOffset) {
+    if (map == nullptr) return;
+    if (objectId > map->materialCount) return;
+
+    map->materials[objectId].startOffset = newOffset;
+}
+
+void SetMaterialDepth(TextureAtlas *map, uint16_t objectId, int16_t newDepth) {
+    if (map == nullptr) return;
+    if (objectId > map->materialCount) return;
+
+    map->materials[objectId].depth = newDepth;
 }
 
 #pragma clang diagnostic pop
