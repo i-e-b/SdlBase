@@ -784,7 +784,7 @@ uint16_t* charMap[] { // ASCII, starting from 33 (0x21) '!'
 
 #define SAFETY_LIMIT 50
 
-void AddGlyph(ScanBuffer *buf, char c, int x, int y, int z, uint32_t color) {
+void AddGlyph(ScanBuffer *buf, char c, int x, int y, int objectId) {
     if (buf == nullptr) return;
     if (c < 33 || c > 126) return;
     if (x < -7 || x > buf->width) return;
@@ -793,18 +793,13 @@ void AddGlyph(ScanBuffer *buf, char c, int x, int y, int z, uint32_t color) {
     // pick a char block. For now, just use 'A'
     uint16_t* points = charMap[c - 33];
 
-    // set objectId, color, and depth
-    uint16_t objId = buf->materialCount;
-    buf->materialCount ++;
-    SetSingleColorMaterial(buf, objId, z, color);
-
     // draw points
     bool on = true;
     for (int i = 0; i < SAFETY_LIMIT; i++) {
         if (points[i] == 0xFFFF) break;
         int px = x + (points[i] & 0xff);
         int py = y - (points[i] >> 8) + 1;
-        SetSP(buf, px, py, objId, on);
+        SetSP(buf, px, py, objectId, on);
         on = !on;
     }
 }

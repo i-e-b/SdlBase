@@ -12,7 +12,41 @@
 #endif
 
 // Functions to use a scan buffer
-// for rendering filled shapes 
+// for rendering filled shapes
+
+// describes a scan line 'object', which is a slice of the
+// texture atlas and a Z depth. TODO: rename all the 'objectId' stuff to 'materialId'
+typedef struct Material {
+    uint32_t startIndex;    // First textel index
+    uint16_t increment;     // per pixel offset through texture atlas
+    uint16_t length;        // count of textels before looping (must be power of two, can be zero)
+    int16_t  depth;         // z-position in final image
+} Material;
+
+typedef struct TextureAtlas {
+    uint32_t* textureAtlas; // all the texture maps squished together.
+    uint32_t textureEnd;    // offset of next free texture index.
+
+    Material* materials;    // draw properties for each object (item count is the max used index, OBJECT_MAX is size)
+    uint16_t materialCount; // offset of the next free object
+} TextureAtlas;
+
+// Init a next texture atlas with space for the given number of textels
+TextureAtlas *InitTextureAtlas(int textureSpace);
+
+// Deallocate a texture atlas
+void FreeTextureAtlas(TextureAtlas* map);
+
+// Reset material and texture indexes, so new objects will overwrite old ones
+void ResetTextureAtlas(TextureAtlas* map);
+
+// create a new single-color material at the given depth. Returns new material ID
+uint16_t SetSingleColorMaterial(TextureAtlas* map, int depth, uint32_t color);
+
+// create a new single-color material at the given depth. Returns new material ID
+uint16_t SetSingleColorMaterialRgb(TextureAtlas* map, int depth, uint8_t r, uint8_t g, uint8_t b);
+
+//---------------------------- SCANLINES ----------------------------------------//
 
 
 // entry for each 'pixel' in a scan buffer
@@ -26,26 +60,14 @@ typedef struct SwitchPoint {
     uint32_t reserved:4;
 } SwitchPoint;
 
-typedef struct Material {
-    uint32_t startIndex;    // First color index
-    uint16_t increment;     // per pixel offset through texture atlas
-    uint16_t length;        // count of pixels before looping (must be power of two, can be zero)
-    int16_t  depth;         // z-position in final image
-} Material;
-
 typedef struct ScanLine {
-	bool dirty;				// set to `true` when the scanline is updated
+    bool dirty;				// set to `true` when the scanline is updated
     int32_t count;          // number of items in the array (changes with draw commands)
     int32_t resetPoint;     // roll-back / undo marker for this line
     int32_t length;         // memory length of the array (fixed)
 
     SwitchPoint* points;    // When drawing to the buffer, we can just append. Before rendering, this must be sorted by x-pos
 } ScanLine;
-
-typedef struct TextureAtlas {
-    uint32_t* textureAtlas; // all the texture maps squished together.
-    uint32_t textureEnd;    // offset of next free texture index.
-} TextureAtlas;
 
 // buffer of switch points.
 typedef struct ScanBuffer {
@@ -54,14 +76,13 @@ typedef struct ScanBuffer {
 
     ScanLine* scanLines;    // matrix of switch points. (height + SPARE_LINES is size)
 
-    Material* materials;    // draw properties for each object (item count is the max used index, OBJECT_MAX is size)
-    uint16_t materialCount; // used to give each object a depth and color.
-
     void *p_heap, *r_heap;  // internal heaps for depth sorting during rendering
 } ScanBuffer;
 
+// Allocate and configure a new scan buffer, attaching a default texture map
 ScanBuffer *InitScanBuffer(int width, int height);
 
+// Deallocate a scan buffer. Does not affect any attached default texture map.
 void FreeScanBuffer(ScanBuffer *buf);
 
 
@@ -150,8 +171,12 @@ void ResetScanLineToColor(ScanBuffer* buf, int line, int objectId);
 // Set a point with an exact position, clipped to bounds
 void SetSP(ScanBuffer * buf, int x, int y, uint16_t objectId, uint8_t isOn);
 
-// create a new single-color material at the given depth. Returns new material ID
-uint16_t SetSingleColorMaterial(ScanBuffer* buf, TextureAtlas* map, int depth, uint32_t color);
+
+
+typedef struct DrawTarget{
+    TextureAtlas *textures;
+    ScanBuffer *scanBuffer;
+} DrawTarget;
 
 #endif
 

@@ -17,17 +17,18 @@ void HandleEvent(SDL_Event *event, volatile ApplicationGlobalState *state) {
     }
 }
 
-void writeString(ScanBuffer *scanBuf, String *line, int x, int y, int z, uint32_t color) {
+void writeString(DrawTarget *draw, String *line, int x, int y, int z, uint32_t color) {
+    auto objectId = SetSingleColorMaterial(draw->textures, z, color);
     while (auto c = StringDequeue(line)) {
-        AddGlyph(scanBuf, c, x, y, z, color);
+        AddGlyph(draw->scanBuffer, c, x, y, objectId);
         x += 8;
     }
 }
 
-void drawInfoMessage(ScanBuffer *scanBuf, int frame, uint32_t frameTime) {
+void drawInfoMessage(DrawTarget *draw, int frame, uint32_t frameTime) {
     if (frameTime < 1) frameTime = 1;
     auto line = StringNewFormat("Frame rate:  \x02; Frame count: \x02.", 1000 / frameTime, frame);
-    writeString(scanBuf, line, 16, 40, 10, 0x7755ff);
+    writeString(draw, line, 16, 40, 10, 0x7755ff);
 
     size_t allocBytes, freeBytes, largestBlock;
     int allocZones, freeZones, refCount;
@@ -35,14 +36,14 @@ void drawInfoMessage(ScanBuffer *scanBuf, int frame, uint32_t frameTime) {
 
     StringAppendFormat(line, "Area use: alloc \x02 bytes; free \x02 bytes; largest free block \x02 bytes.",
                        allocBytes, freeBytes, largestBlock);
-    writeString(scanBuf, line, 16, 100, 10, 0x77ffaa);
+    writeString(draw, line, 16, 100, 10, 0x77ffaa);
 
     StringAppendFormat(line, "alloc \x02 zones; free \x02 zones; total \x02 objects referenced.",
                        allocZones, freeZones, refCount);
-    writeString(scanBuf, line, 16, 120, 10, 0x77ffaa);
+    writeString(draw, line, 16, 120, 10, 0x77ffaa);
 }
 
-void drawMouseHalo(ScanBuffer *scanBuf){
+void drawMouseHalo(DrawTarget *draw){
     int x,y;
     int sz = 20;
     int r=0xaa,g=0x77,b= 0x77;
@@ -50,28 +51,24 @@ void drawMouseHalo(ScanBuffer *scanBuf){
         g = b = 0x00;
         sz = 15;
     }
-    OutlineEllipse(scanBuf, x, y, sz, sz, 5, 5, r, g, b);
+    auto objectId = SetSingleColorMaterialRgb(draw->textures, 5, r, g, b);
+    OutlineEllipse(draw->scanBuffer, x, y, sz, sz, 5, objectId);
 }
 
-void DrawToScanBuffer(ScanBuffer *scanBuf, int frame, uint32_t frameTime) {
+void DrawToScanBuffer(DrawTarget *drawTarget, int frame, uint32_t frameTime) {
     MMPush(1 MEGABYTE); // prepare a per-frame bump allocator
 
-    if (frame < 1) {
-        ClearScanBuffer(scanBuf); // wipe out switch-point buffer
-        SetBackground(scanBuf, 10000, 50, 50, 70);
+    ResetTextureAtlas(drawTarget->textures);
 
-        auto line = StringNew("Welcome to the sdl program base! Press any key to stop. Close window to exit");
-        writeString(scanBuf, line, 16, 30, 1, 0xffffff);
+    ClearScanBuffer(drawTarget->scanBuffer); // wipe out switch-point buffer
 
-        SetScanBufferResetPoint(scanBuf); // Allow us to 'reset' to the drawing to here
-                                          // TODO: later, allow push/pop?
-    }
-    else {
-        ResetScanBuffer(scanBuf); // 'undo' any changes after the last reset point
+    SetBackground(drawTarget->scanBuffer, SetSingleColorMaterialRgb(drawTarget->textures, 10000, 50, 50, 70));
 
-        drawInfoMessage(scanBuf, frame, frameTime);
-        drawMouseHalo(scanBuf);
-    }
+    auto line = StringNew("Welcome to the sdl program base! Press any key to stop. Close window to exit");
+    writeString(drawTarget, line, 16, 30, 1, 0xffffff);
+
+    drawInfoMessage(drawTarget, frame, frameTime);
+    drawMouseHalo(drawTarget);
 
     MMPop(); // wipe out anything we allocated in this frame.
 }

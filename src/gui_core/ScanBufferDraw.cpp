@@ -34,10 +34,6 @@ ScanBuffer * InitScanBuffer(int width, int height)
 
     auto sizeEstimate = width * 2;
 
-    // Lookups into the texture atlas
-    buf->materials = (Material*)calloc(OBJECT_MAX + 1, sizeof(Material));
-    if (buf->materials == nullptr) { FreeScanBuffer(buf); return nullptr; }
-
     // we use a spare pairs of lines as sorting temp memory
     buf->scanLines = (ScanLine*)calloc(height+SPARE_LINES, sizeof(ScanLine));
     if (buf->scanLines == nullptr) { FreeScanBuffer(buf); return nullptr; }
@@ -68,7 +64,6 @@ ScanBuffer * InitScanBuffer(int width, int height)
     }
 
     // set initial sizes and counts
-    buf->materialCount = 0;
 
     buf->height = height;
     buf->width = width;
@@ -85,7 +80,6 @@ void FreeScanBuffer(ScanBuffer * buf)
         }
         free(buf->scanLines);
     }
-    if (buf->materials != nullptr) free(buf->materials);
     if (buf->p_heap != nullptr) HeapDestroy((PriorityQueue)buf->p_heap);
     if (buf->r_heap != nullptr) HeapDestroy((PriorityQueue)buf->r_heap);
     free(buf);
@@ -112,18 +106,7 @@ void SetSP(ScanBuffer * buf, int x, int y, uint16_t objectId, uint8_t isOn) {
 	line->count++; // increment pointer
 }
 
-uint16_t SetSingleColorMaterial(ScanBuffer* buf, TextureAtlas* map, int depth, uint32_t color) {
-    if (buf->materialCount+1 >= OBJECT_MAX) return 0;
 
-    uint16_t objectId = ++(buf->materialCount);
-    uint32_t newIndex = map->textureEnd++;
-    map->textureAtlas[newIndex] = color;
-
-    buf->materials[objectId].startIndex = newIndex;
-    buf->materials[objectId].increment = 0;
-    buf->materials[objectId].length = 1;
-    buf->materials[objectId].depth = (int16_t)depth;
-}
 
 // INTERNAL: Write scan switch points into buffer for a single line.
 //           Used to draw any other polygons
@@ -403,7 +386,7 @@ void SetBackground(
 void ClearScanBuffer(ScanBuffer * buf)
 {
     if (buf == nullptr) return;
-    buf->materialCount = 0; // reset object ids
+
     for (int i = 0; i < buf->height; i++)
     {
         buf->scanLines[i].count = 0;
@@ -464,16 +447,6 @@ void SwapScanLines(ScanBuffer* buf, int a, int b) {
 void CopyScanBuffer(ScanBuffer *src, ScanBuffer *dst)
 {
     if (src == nullptr || dst == nullptr) return;
-
-    // object materials
-    auto mc = src->materialCount;
-    for (int i = 0; i < mc; ++i) {
-        dst->materials[i].startIndex = src->materials[i].startIndex;
-        dst->materials[i].length = src->materials[i].length;
-        dst->materials[i].increment = src->materials[i].increment;
-        dst->materials[i].depth = src->materials[i].depth;
-    }
-    dst->materialCount = src->materialCount;
 
     // scanline switch points
     auto max = src->height;
@@ -553,7 +526,7 @@ void RenderScanLine(
     auto tmpLine2 = &(buf->scanLines[buf->height+1]);
 
     int yOff = buf->width * lineIndex;
-    auto materials = buf->materials;
+    auto materials = map->materials;
     auto count = scanLine->count;
 
     // Copy switch points to the scratch space. This allows for our push/pop graphics storage.
@@ -667,5 +640,53 @@ void RenderScanBufferToFrameBuffer(
     }
 }
 
+TextureAtlas *InitTextureAtlas(int textureSpace) {
+    auto map = (TextureAtlas*)calloc(1, sizeof(TextureAtlas));
+    if (map == nullptr) return nullptr;
+
+    // the texture atlas' textels
+    map->textureAtlas = (uint32_t*)malloc(textureSpace + 1);
+    if (map->textureAtlas == nullptr) { FreeTextureAtlas(map); return nullptr; }
+    map->textureEnd = 0;
+
+    // Lookups into the texture atlas
+    map->materials = (Material*)calloc(OBJECT_MAX + 1, sizeof(Material));
+    if (map->materials == nullptr) { FreeTextureAtlas(map); return nullptr; }
+    map->materialCount = 0;
+
+    return map;
+}
+
+void FreeTextureAtlas(TextureAtlas *map) {
+    if (map == nullptr) return;
+
+    if (map->textureAtlas != nullptr) free(map->textureAtlas);
+    if (map->materials != nullptr) free(map->textureAtlas);
+}
+
+void ResetTextureAtlas(TextureAtlas *map) {
+    if (map == nullptr) return;
+    map->textureEnd = 0;
+    map->materialCount = 0;
+}
+uint16_t SetSingleColorMaterialRgb(TextureAtlas* map, int depth, uint8_t r, uint8_t g, uint8_t b){
+    uint32_t color = ((r & 0xffu) << 16u) + ((g & 0xffu) << 8u) + (b & 0xffu);
+    return SetSingleColorMaterial(map, depth, color);
+}
+
+uint16_t SetSingleColorMaterial(TextureAtlas* map, int depth, uint32_t color) {
+    if (map->materialCount+1 >= OBJECT_MAX) return 0;
+
+    uint16_t objectId = ++(map->materialCount);
+    uint32_t newIndex = map->textureEnd++;
+    map->textureAtlas[newIndex] = color;
+
+    map->materials[objectId].startIndex = newIndex;
+    map->materials[objectId].increment = 0;
+    map->materials[objectId].length = 1;
+    map->materials[objectId].depth = (int16_t)depth;
+
+    return objectId;
+}
 
 #pragma clang diagnostic pop

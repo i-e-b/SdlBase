@@ -3,22 +3,23 @@
 #include <gui_core/ScanBufferFont.h>
 #include "demo.h"
 
-void log(ScanBuffer *scanBuf, String *line, int x, int y, int z, uint32_t color) {
+void log(DrawTarget *draw, String *line, int x, int y, int z, uint32_t color) {
+    auto objectId = SetSingleColorMaterial(draw->textures, z, color);
     while (auto c = StringDequeue(line)) {
-        AddGlyph(scanBuf, c, x, y, z, color);
+        AddGlyph(draw->scanBuffer, c, x, y, objectId);
         x += 8;
     }
 }
 
-bool RandomNumberTest(ScanBuffer *scanBuf) {
-    log (scanBuf, nullptr, 0,0,0,0);
+bool RandomNumberTest(DrawTarget *draw) {
+    log (draw, nullptr, 0,0,0,0);
     random_at_most(255);
     return false;
 }
 
-bool RunTest(ScanBuffer *scanBuf, int index){
+bool RunTest(DrawTarget *draw, int index){
     switch (index) {
-        case 0: return RandomNumberTest(scanBuf);
+        case 0: return RandomNumberTest(draw);
 
         default: return false;
     }

@@ -4,6 +4,6 @@
 
 #include "app_start.h"
 
-bool RunTest(ScanBuffer *scanBuf, int index);
+bool RunTest(DrawTarget *draw, int index);
 
 #endif //SdlBase_demo_h

@@ -13,6 +13,7 @@ using namespace std;
 SDL_mutex* gDataLock = nullptr; // Data access semaphore, for the read buffer
 SDL_Window* window; //The window we'll be rendering to
 ScanBuffer *bufferA, *bufferB; // pair of scanline buffers. One is written while the other is read
+TextureAtlas *textures; // one colour/texture map used across both buffers
 volatile bool quit = false; // Quit flag
 volatile bool drawDone = false; // Quit complete flag
 volatile int writeBuffer = 0; // which buffer is being written (other will be read)
@@ -39,7 +40,7 @@ int RenderWorker(void*)
         auto scanBuf = (writeBuffer > 0) ? bufferA : bufferB; // must be opposite way to writing loop
         SDL_UnlockMutex(gDataLock);
 
-        RenderScanBufferToFrameBuffer(scanBuf, base);
+        RenderScanBufferToFrameBuffer(scanBuf, textures, base);
         SDL_UpdateWindowSurface(window);                        // update the surface -- need to do this every frame.
 
         SDL_LockMutex(gDataLock);
@@ -97,6 +98,8 @@ int main()
 
     bufferA = InitScanBuffer(w, h);
     bufferB = InitScanBuffer(w, h);
+    textures = InitTextureAtlas(262144); // 512*512, not enough for "real" textures, but should work for testing
+    // TODO: add auto-scaling to texture atlas so we don't need to guess!
 
     // run the rendering thread
 #ifdef MULTI_THREAD
@@ -136,7 +139,8 @@ int main()
 #endif
 
         // Pick the write buffer and set switch points:
-        DrawToScanBuffer(writingScanBuf, frame++, fTime);
+        auto draw = DrawTarget {textures, writingScanBuf};
+        DrawToScanBuffer(&draw, frame++, fTime);
 
 #ifndef MULTI_THREAD
         // if not threaded, render immediately
