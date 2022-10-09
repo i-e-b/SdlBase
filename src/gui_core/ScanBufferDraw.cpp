@@ -635,13 +635,16 @@ void RenderScanLine(
 // This can be done on a different processor core from other draw commands to spread the load
 // Do not draw to a scan buffer while it is rendering (switch buffers if you need to)
 void RenderScanBufferToFrameBuffer(
-    ScanBuffer *buf, // source scan buffer
+    ScanBuffer *buf,   // source scan buffer
     TextureAtlas *map, // color/texture map to use
-    BYTE* data       // target frame-buffer (must match scanbuffer dimensions)
+    BYTE* data,        // target frame-buffer (must match scanbuffer dimensions)
+    int start,         // which line to start at? For full frame render, use 0
+    int skip           // how many lines to skip? For full frame render, use 0
 ) {
     if (buf == nullptr || data == nullptr) return;
 
-    for (int i = 0; i < buf->height; i++) {
+    int incr = skip+1;
+    for (int i = start; i < buf->height; i+=incr) {
         RenderScanLine(buf, map, i, data);
     }
 }

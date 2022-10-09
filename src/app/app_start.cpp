@@ -25,7 +25,7 @@ void writeString(DrawTarget *draw, String *line, int x, int y, int z, uint32_t c
     }
 }
 
-void drawInfoMessage(DrawTarget *draw, int frame, uint32_t frameTime) {
+void drawInfoMessage(DrawTarget *draw, uint32_t frame, uint32_t frameTime) {
     if (frameTime < 1) frameTime = 1;
     auto line = StringNewFormat("Frame rate:  \x02; Frame count: \x02.", 1000 / frameTime, frame);
     writeString(draw, line, 16, 40, 10, 0x7755ff);
@@ -41,6 +41,12 @@ void drawInfoMessage(DrawTarget *draw, int frame, uint32_t frameTime) {
     StringAppendFormat(line, "alloc \x02 zones; free \x02 zones; total \x02 objects referenced.",
                        allocZones, freeZones, refCount);
     writeString(draw, line, 16, 120, 10, 0x77ffaa);
+
+    for (int i = 0; i < 350; ++i) {
+
+        StringAppend(line, "This text is here to stress the renderer, as it results in lots of swap points. You probably don't need this much text on screen at once.");
+        writeString(draw, line, 16 + (i % 5), 150 + (i*3), i, i*5531675);
+    }
 }
 
 void drawMouseHalo(DrawTarget *draw){
@@ -61,7 +67,7 @@ void drawMouseHalo(DrawTarget *draw){
     OutlineEllipse(draw->scanBuffer, x, y, sz, sz, 5, objectId);
 }
 
-void DrawToScanBuffer(DrawTarget *draw, int frame, uint32_t frameTime) {
+void DrawToScanBuffer(DrawTarget *draw, uint32_t frame, uint32_t frameTime) {
     MMPush(1 MEGABYTE); // prepare a per-frame bump allocator
 
     ResetTextureAtlas(draw->textures); // really wasteful. Move this away

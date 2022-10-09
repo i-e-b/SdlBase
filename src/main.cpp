@@ -1,7 +1,6 @@
 #include "src/gui_core/ScanBufferDraw.h"
 
 #include <SDL.h>
-#include <SDL_mutex.h>
 #include <SDL_thread.h>
 
 #include <iostream>
@@ -10,7 +9,6 @@
 using namespace std;
 
 // Two-thread rendering stuff:
-SDL_mutex* gDataLock = nullptr; // Data access semaphore, for the read buffer
 SDL_Window* window; //The window we'll be rendering to
 ScanBuffer *bufferA, *bufferB; // pair of scanline buffers. One is written while the other is read
 TextureAtlas *textures; // one colour/texture map used across both buffers
@@ -18,8 +16,10 @@ volatile bool quit = false; // Quit flag
 volatile bool drawDone = false; // Quit complete flag
 volatile int writeBuffer = 0; // which buffer is being written (other will be read)
 volatile int frameWait = 0; // frames waiting
-BYTE* base = nullptr; // graphics base
-int rowBytes = 0;
+volatile int renderThreadWaits = 0; // number of ms the render thread has spent paused
+volatile int renderThreadSkips = 0; // number of frames the render skipped due to speed problems
+volatile BYTE* base = nullptr; // graphics base
+volatile int rowBytes = 0;
 
 // User/Core shared data:
 volatile ApplicationGlobalState gState = {};
@@ -27,25 +27,36 @@ volatile ApplicationGlobalState gState = {};
 // Scanline buffer to pixel buffer rendering on a separate thread
 int RenderWorker(void*)
 {
+    int offset = 0;
     while (base == nullptr) {
         SDL_Delay(5);
     }
     SDL_Delay(150); // delay wake up
     while (!quit) {
+
         while (!quit && frameWait < 1) {
             SDL_Delay(1); // pause the thread until a new scan buffer is ready
+            renderThreadWaits++;
         }
+        auto fst = SDL_GetTicks();
 
-        SDL_LockMutex(gDataLock);
+        // Grab a buffer and release the lock
         auto scanBuf = (writeBuffer > 0) ? bufferA : bufferB; // must be opposite way to writing loop
-        SDL_UnlockMutex(gDataLock);
 
-        RenderScanBufferToFrameBuffer(scanBuf, textures, base);
-        SDL_UpdateWindowSurface(window);                        // update the surface -- need to do this every frame.
+        // Render odd then even scanlines, dropping the second set if rendering is getting late
+        offset = 1-offset;
+        BYTE* target = (BYTE*)base;
+        RenderScanBufferToFrameBuffer(scanBuf, textures, target, offset, 1);
 
-        SDL_LockMutex(gDataLock);
+        // if no new frame is ready render the other lines of this one
+        auto fTime = SDL_GetTicks() - fst;
+        if (fTime < FRAME_TIME_TARGET) { // We have time after the frame
+            offset = 1-offset;
+            RenderScanBufferToFrameBuffer(scanBuf, textures, target, offset, 1);
+        }
+        else renderThreadSkips++;
+
         frameWait = 0;
-        SDL_UnlockMutex(gDataLock);
     }
     drawDone = true;
     return 0;
@@ -56,6 +67,7 @@ void HandleEvents() {
     SDL_Event next_event;
     while (SDL_PollEvent(&next_event)) {
         HandleEvent(&next_event, &gState);
+        SDL_Delay(0);
     }
 }
 
@@ -84,7 +96,6 @@ int main()
     // Let the app startup
     StartUp();
 
-    gDataLock = SDL_CreateMutex(); // Initialize lock, one reader at a time
     screenSurface = SDL_GetWindowSurface(window); // Get window surface
 
     base = (BYTE*)screenSurface->pixels;
@@ -115,36 +126,30 @@ int main()
     // Draw loop                                                                                      //
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     auto writingScanBuf = bufferA;
-    auto readingScanBuf = bufferB;
     gState.running = true;
     while (gState.running) {
         uint32_t fst = SDL_GetTicks();
         // Wait for frame render to finish, then swap buffers and do next
 
-#ifdef MULTI_THREAD
-        if (frameWait < 1) {
-            // Swap buffers, we will render one to pixels while we're issuing draw commands to the other
-            // If render can't keep up with frameWait, we skip this frame and draw to the same buffer.
-            SDL_LockMutex(gDataLock);                               // lock
-            writeBuffer = 1 - writeBuffer;                          // switch buffer
-            writingScanBuf = (writeBuffer > 0) ? bufferB : bufferA;        // MUST be opposite way to writing loop
-            readingScanBuf = (writeBuffer > 0) ? bufferA : bufferB;        // MUST be same way as writing loop
-
-    #ifdef COPY_SCAN_BUFFERS
-            CopyScanBuffer(readingScanBuf, writingScanBuf);
-    #endif
-            frameWait = 1;                                          // signal to the other thread that the buffer has changed
-            SDL_UnlockMutex(gDataLock);                             // unlock
-        }
-#endif
-
         // Pick the write buffer and set switch points:
         auto draw = DrawTarget {textures, writingScanBuf};
         DrawToScanBuffer(&draw, frame++, fTime);
 
-#ifndef MULTI_THREAD
+#ifdef MULTI_THREAD
+        if (frameWait < 1) {
+            SDL_UpdateWindowSurface(window);                        // update the surface -- need to do this every frame.
+
+            // Swap buffers, we will render one to pixels while we're issuing draw commands to the other
+            // If render can't keep up with frameWait, we skip this frame and draw to the same buffer.
+            writeBuffer = 1 - writeBuffer;                          // switch buffer
+            writingScanBuf = (writeBuffer > 0) ? bufferB : bufferA;        // MUST be opposite way to writing loop
+
+            frameWait = 1;                                          // signal to the other thread that the buffer has changed
+        }
+#else
         // if not threaded, render immediately
-        RenderBuffer(writingScanBuf, base);
+        //RenderBuffer(writingScanBuf, base);
+        RenderScanBufferToFrameBuffer(writingScanBuf, textures, base);
         SDL_UpdateWindowSurface(window);
 #endif
 
@@ -171,8 +176,13 @@ int main()
 
     long endTicks = SDL_GetTicks();
     float avgFPS = static_cast<float>(frame) / (static_cast<float>(endTicks - startTicks) / 1000.f);
-    float idleFraction = static_cast<float>(idleTime) / (15.f*static_cast<float>(frame));
-    cout << "\r\nFPS ave = " << avgFPS << "\r\nIdle % = " << (100 * idleFraction);
+    float totalTime = FRAME_TIME_TARGET * frame;
+    float idleFraction = static_cast<float>(idleTime) / totalTime;
+    float rndrIdle = static_cast<float>(renderThreadWaits) / totalTime;
+    float rndrSkip = static_cast<float>(renderThreadSkips) / static_cast<float>(frame);
+    cout << "\r\nFPS ave = " << avgFPS << "\r\nLogic loop idle " << (100 * idleFraction) << "%\r\n"
+        << "Render loop idle " << (100*rndrIdle) << "%\r\n"
+        << "Render loop skipped " << (100*rndrSkip) << "%\r\n";
 
     // Let the app deallocate etc
     Shutdown();
@@ -197,8 +207,6 @@ int main()
 #ifdef MULTI_THREAD
     SDL_WaitThread(threadA, nullptr);
 #endif
-    SDL_DestroyMutex(gDataLock);
-    gDataLock = nullptr;
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;

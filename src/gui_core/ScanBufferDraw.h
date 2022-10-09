@@ -176,7 +176,9 @@ uint32_t Blend(uint32_t prop1, uint32_t color1, uint32_t color2);
 void RenderScanBufferToFrameBuffer(
     ScanBuffer *buf,   // source scan buffer
     TextureAtlas *map, // color/texture map to use
-    BYTE* data         // target frame-buffer (must match ScanBuffer dimensions)
+    BYTE* data,        // target frame-buffer (must match ScanBuffer dimensions)
+    int start,         // which line to start at? For full frame render, use 0
+    int skip           // how many lines to skip? For full frame render, use 0
 );
 
 // Copy contents of src to dst, replacing dst.

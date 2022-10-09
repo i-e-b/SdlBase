@@ -14,8 +14,6 @@ const int SCREEN_HEIGHT = 600;
 
 // Ideal frame duration for frame limit, in milliseconds
 #define FRAME_TIME_TARGET 15
-// If defined, data will be copied between the write and render buffers. If you always redraw on every frame, you can undefine this.
-#define COPY_SCAN_BUFFERS 1
 // If set, renderer will try to hit the ideal frame time (by delaying frames, or postponing input events as required)
 // Otherwise, drawing will be as fast as possible, and events are handled every frame
 #define FRAME_LIMIT 1
@@ -38,7 +36,7 @@ typedef struct ApplicationGlobalState {
 // Called once at app start
 void StartUp();
 // Called for every frame. The scan buffer is not cleared before calling
-void DrawToScanBuffer(DrawTarget *draw, int frame, uint32_t frameTime);
+void DrawToScanBuffer(DrawTarget *draw, uint32_t frame, uint32_t frameTime);
 // Called when an SDL event is consumed
 void HandleEvent(SDL_Event *event, volatile ApplicationGlobalState *state);
 
